@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Sheaf Q Tests Classify Mendelian Randomization Transportability and Recover Causal DAG Structure Across Five Clinical Domains"
+authors:
+  - family-names: Tower
+    given-names: Elliot
+    email: elliot@elliottower.ai
+    orcid: "https://orcid.org/0000-0001-7004-8884"
+type: software
+license: MIT
+repository-code: "https://github.com/elliottower/sheaf-q-transportability"
+doi: "10.5281/zenodo.21348651"

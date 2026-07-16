@@ -1,0 +1,21 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# Submission artifacts
+submission/
+SUBMISSIONS.md
+
+# Paper builds
+paper/
+
+# OS
+.DS_Store
+__pycache__/
+*.pyc

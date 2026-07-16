@@ -1,0 +1,32 @@
+{
+  "title": "Sheaf Q Tests Classify Mendelian Randomization Transportability and Recover Causal DAG Structure Across Five Clinical Domains",
+  "upload_type": "software",
+  "description": "Per-edge sheaf Q tests classify Mendelian randomization transportability across populations and recover causal DAG structure invisible to global heterogeneity tests. Validated on 61 MR instrument pairs across five clinical domains (MS, AD, cardiovascular, metabolic, psychiatric) with simulation experiments on MS- and AD-calibrated structural equation models. Code, data, and analysis pipelines included.",
+  "creators": [
+    {
+      "name": "Tower, Elliot",
+      "orcid": "0000-0001-7004-8884"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "sheaf cohomology",
+    "Mendelian randomization",
+    "transportability",
+    "causal inference",
+    "heterogeneity",
+    "meta-analysis"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/elliottower/sheaf-q-transportability",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://github.com/elliottower/epidemiology-boundary-conditions",
+      "relation": "isPartOf",
+      "scheme": "url"
+    }
+  ]
+}
