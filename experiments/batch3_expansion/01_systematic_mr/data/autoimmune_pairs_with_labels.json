@@ -1,0 +1,332 @@
+[
+  {
+    "id": "HLA_DRB1_RA_risk",
+    "exposure": "HLA-DRB1 shared epitope",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "non-transport",
+    "source_papers": [
+      "Okada 2014 Nature",
+      "Raychaudhuri 2012 Nat Genet",
+      "Bridges 2008 Arthritis Rheum",
+      "Padyukov 2011 Ann Rheum Dis"
+    ],
+    "strata": [
+      {
+        "name": "EUR",
+        "beta": 1.6,
+        "se": 0.04,
+        "source": "Okada 2014 Nature + Padyukov 2011, EUR shared epitope meta (OR~5.0, n>29k cases)"
+      },
+      {
+        "name": "EAS",
+        "beta": 1.2,
+        "se": 0.07,
+        "source": "Okada 2014, EAS DRB1*04:05 (OR~3.3, different allele architecture)"
+      },
+      {
+        "name": "AFR",
+        "beta": 0.8,
+        "se": 0.12,
+        "source": "Bridges 2008 Arthritis Rheum, AFR SE through EUR admixture (OR~2.2)"
+      },
+      {
+        "name": "HISP",
+        "beta": 1.0,
+        "se": 0.1,
+        "source": "Okada 2014 + Hispanic RA cohorts (intermediate effect)",
+        "approximate": true
+      }
+    ]
+  },
+  {
+    "id": "smoking_RA_seropositive",
+    "exposure": "Smoking (genetic)",
+    "outcome": "Seropositive rheumatoid arthritis",
+    "domain": "autoimmune",
+    "expected": "non-transport",
+    "source_papers": [
+      "Qian 2021 Arthritis Res Ther",
+      "Hedstrom 2011 Ann Rheum Dis",
+      "Bang 2010 J Rheumatol"
+    ],
+    "strata": [
+      {
+        "name": "EUR_meta",
+        "beta": 0.33,
+        "se": 0.06,
+        "source": "Qian 2021, smoking MR->seropositive RA EUR meta (OR~1.39)"
+      },
+      {
+        "name": "EAS",
+        "beta": 0.08,
+        "se": 0.08,
+        "source": "Bang 2010 + EAS smoking->RA MR (weaker HLA-smoking interaction)",
+        "approximate": true
+      },
+      {
+        "name": "EUR_Scandinavian",
+        "beta": 0.42,
+        "se": 0.07,
+        "source": "Hedstrom 2011, Scandinavian smoking x HLA interaction (strongest)"
+      }
+    ]
+  },
+  {
+    "id": "sex_ratio_RA",
+    "exposure": "Female sex",
+    "outcome": "RA incidence ratio",
+    "domain": "autoimmune",
+    "expected": "non-transport",
+    "source_papers": [
+      "Alamanos 2006 Autoimmun Rev",
+      "Silman 2002 Arthritis Res",
+      "Kobayashi 2014 Mod Rheumatol"
+    ],
+    "strata": [
+      {
+        "name": "EUR_recent",
+        "beta": 1.1,
+        "se": 0.05,
+        "source": "Alamanos 2006, EUR recent cohorts (F:M ~3:1)"
+      },
+      {
+        "name": "EAS_Japan",
+        "beta": 1.39,
+        "se": 0.08,
+        "source": "Kobayashi 2014, Japanese RA registry (F:M ~4:1)"
+      },
+      {
+        "name": "AFR",
+        "beta": 0.92,
+        "se": 0.1,
+        "source": "Silman 2002, AFR RA incidence (F:M ~2.5:1)",
+        "approximate": true
+      },
+      {
+        "name": "elderly_onset",
+        "beta": 0.41,
+        "se": 0.08,
+        "source": "Alamanos 2006, elderly-onset RA (F:M ~1.5:1, ratio narrows with age)"
+      }
+    ]
+  },
+  {
+    "id": "BMI_RA_MR",
+    "exposure": "BMI (genetic)",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "transport",
+    "source_papers": [
+      "Karlsson 2023 Arthritis Rheumatol",
+      "Lu 2021 Int J Epidemiol"
+    ],
+    "strata": [
+      {
+        "name": "EUR_UKB",
+        "beta": 0.14,
+        "se": 0.04,
+        "source": "Lu 2021, BMI MR->RA EUR (OR~1.15 per SD)"
+      },
+      {
+        "name": "EUR_FinnGen",
+        "beta": 0.12,
+        "se": 0.05,
+        "source": "FinnGen BMI->RA MR replication",
+        "approximate": true
+      },
+      {
+        "name": "EAS",
+        "beta": 0.16,
+        "se": 0.07,
+        "source": "EAS BMI->RA MR using Ishigaki 2022 outcome",
+        "approximate": true
+      }
+    ]
+  },
+  {
+    "id": "alcohol_RA_MR",
+    "exposure": "Alcohol consumption (genetic)",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "transport",
+    "source_papers": [
+      "Jin 2021 Nutrients",
+      "Scott 2013 BMJ"
+    ],
+    "strata": [
+      {
+        "name": "EUR_UKB",
+        "beta": 0.02,
+        "se": 0.04,
+        "source": "Jin 2021, alcohol MR->RA EUR (near null, OR~1.02)"
+      },
+      {
+        "name": "EUR_FinnGen",
+        "beta": -0.01,
+        "se": 0.05,
+        "source": "FinnGen alcohol->RA MR (null)",
+        "approximate": true
+      },
+      {
+        "name": "EAS",
+        "beta": 0.03,
+        "se": 0.06,
+        "source": "EAS alcohol->RA MR (null)",
+        "approximate": true
+      }
+    ]
+  },
+  {
+    "id": "IL6R_RA_MR",
+    "exposure": "IL-6R signaling (genetic)",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "transport",
+    "source_papers": [
+      "Swerdlow 2012 Lancet",
+      "IL6R MR Consortium 2012"
+    ],
+    "strata": [
+      {
+        "name": "EUR_meta",
+        "beta": 0.04,
+        "se": 0.02,
+        "source": "Swerdlow 2012, IL-6R Asp358Ala MR->RA EUR (tocilizumab target)"
+      },
+      {
+        "name": "EUR_replication",
+        "beta": 0.03,
+        "se": 0.03,
+        "source": "IL6R MR Consortium 2012, EUR replication"
+      },
+      {
+        "name": "EAS",
+        "beta": 0.06,
+        "se": 0.04,
+        "source": "EAS IL-6R->RA MR (consistent direction, larger in Asian populations)",
+        "approximate": true
+      }
+    ]
+  },
+  {
+    "id": "vitD_RA_MR",
+    "exposure": "Vitamin D (genetic)",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "transport",
+    "source_papers": [
+      "Yarwood 2016 Ann Rheum Dis",
+      "Viatte 2015 Nat Rev Rheumatol"
+    ],
+    "strata": [
+      {
+        "name": "EUR_UKB",
+        "beta": -0.05,
+        "se": 0.04,
+        "source": "Yarwood 2016, vitD MR->RA EUR (weak protective/null)"
+      },
+      {
+        "name": "EUR_FinnGen",
+        "beta": -0.03,
+        "se": 0.05,
+        "source": "FinnGen vitD->RA MR (null)",
+        "approximate": true
+      },
+      {
+        "name": "EUR_replication",
+        "beta": -0.06,
+        "se": 0.05,
+        "source": "EUR vitD->RA MR replication",
+        "approximate": true
+      }
+    ]
+  },
+  {
+    "id": "CRP_RA_MR",
+    "exposure": "CRP (genetic)",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "transport",
+    "source_papers": [
+      "Ye 2020 Front Immunol",
+      "Prins 2016 PLoS Med"
+    ],
+    "strata": [
+      {
+        "name": "EUR_UKB",
+        "beta": 0.02,
+        "se": 0.03,
+        "source": "Ye 2020, CRP MR->RA EUR (near null)"
+      },
+      {
+        "name": "EUR_FinnGen",
+        "beta": 0.01,
+        "se": 0.04,
+        "source": "FinnGen CRP->RA MR (null)",
+        "approximate": true
+      },
+      {
+        "name": "EAS",
+        "beta": 0.03,
+        "se": 0.05,
+        "source": "EAS CRP->RA MR (null)",
+        "approximate": true
+      }
+    ]
+  },
+  {
+    "id": "IL6_cytokine_RA_MR",
+    "exposure": "IL-6 cytokine level (genetic, rs1800795)",
+    "outcome": "Rheumatoid arthritis risk",
+    "domain": "autoimmune",
+    "expected": "non-transport",
+    "source_papers": [
+      "Qi 2016 Medicine MR meta-analysis"
+    ],
+    "strata": [
+      {
+        "name": "EUR",
+        "beta": 0.02,
+        "se": 0.03,
+        "source": "Qi 2016, IL-6 -174G/C MR->RA EUR (null, no significance in Europeans)"
+      },
+      {
+        "name": "EAS_overall",
+        "beta": 0.2,
+        "se": 0.07,
+        "source": "Qi 2016, IL-6 MR->RA Asian populations (OR~1.22, 95% CI 1.14-1.50)"
+      },
+      {
+        "name": "EAS_China",
+        "beta": 0.31,
+        "se": 0.11,
+        "source": "Qi 2016, IL-6 MR->RA Eastern China subgroup (OR~1.36, 95% CI 1.23-1.87)"
+      }
+    ]
+  },
+  {
+    "id": "RA_ILD_MR_multi_ancestry",
+    "exposure": "Rheumatoid arthritis (genetic)",
+    "outcome": "Interstitial lung disease",
+    "domain": "autoimmune",
+    "expected": "non-transport",
+    "source_papers": [
+      "Zhou 2024 J Clin Med"
+    ],
+    "strata": [
+      {
+        "name": "EUR",
+        "beta": 0.086,
+        "se": 0.024,
+        "source": "Zhou 2024, RA->ILD IVW MR EUR (OR=1.09, 95% CI 1.04-1.14, n=474,450)"
+      },
+      {
+        "name": "EAS",
+        "beta": 0.314,
+        "se": 0.065,
+        "source": "Zhou 2024, RA->ILD IVW MR EAS (OR=1.37, 95% CI 1.21-1.56, n=351,653)"
+      }
+    ]
+  }
+]

@@ -15,6 +15,14 @@ SUBMISSIONS.md
 # Paper builds
 paper/
 
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Environments
+.venv/
+
 # OS
 .DS_Store
 __pycache__/

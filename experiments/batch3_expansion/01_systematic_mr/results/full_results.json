@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2026-07-12T15:20:45.401416",
+    "timestamp": "2026-07-16T13:52:30.766617",
     "alpha": 0.05,
-    "n_pairs": 61,
-    "input_file": "/Users/elliottower/Documents/GitHub/epidemiology-boundary-conditions/experiments/batch3_expansion/01_systematic_mr/data/pairs_curated.json"
+    "n_pairs": 71,
+    "input_file": "/Users/elliottower/Documents/GitHub/sheaf-q-transportability/experiments/batch3_expansion/01_systematic_mr/data/pairs_curated.json"
   },
   "per_pair": {
     "HLA_DRB1_MS_risk": {
@@ -21,7 +21,7 @@
       "tau2": 0.052877224874525695,
       "beta_pooled": 0.8764570230607966,
       "k": 4,
-      "power": 0.9758368432753091,
+      "power": 0.9758368432753092,
       "approximate": true
     },
     "latitude_vitD_MS": {
@@ -39,7 +39,7 @@
       "tau2": 0.032116562644475266,
       "beta_pooled": 0.27427509293680297,
       "k": 4,
-      "power": 0.9789122950721445,
+      "power": 0.9789122950721446,
       "approximate": true
     },
     "sex_ratio_MS": {
@@ -165,7 +165,7 @@
       "tau2": 0.01495090457383106,
       "beta_pooled": 0.2992901838091514,
       "k": 4,
-      "power": 0.8635737555025175,
+      "power": 0.8635737555025176,
       "approximate": false
     },
     "ancestry_amyloid_threshold": {
@@ -183,7 +183,7 @@
       "tau2": 0.002765537513997759,
       "beta_pooled": 0.8145860709592642,
       "k": 4,
-      "power": 0.32552496697527333,
+      "power": 0.32552496697527533,
       "approximate": true
     },
     "age_lecanemab_response": {
@@ -201,7 +201,7 @@
       "tau2": 0.013189610389610383,
       "beta_pooled": -0.2815138592750533,
       "k": 3,
-      "power": 0.2934000596723412,
+      "power": 0.2934000596723447,
       "approximate": false
     },
     "CRP_AD_MR": {
@@ -273,7 +273,7 @@
       "tau2": 0.017322295423023576,
       "beta_pooled": -0.05070631970260222,
       "k": 4,
-      "power": 0.8094555224310609,
+      "power": 0.809455522431062,
       "approximate": true
     },
     "T2D_AD_MR": {
@@ -291,7 +291,7 @@
       "tau2": 5.286791790913855e-05,
       "beta_pooled": 0.06595695618754803,
       "k": 4,
-      "power": 0.05764698553471381,
+      "power": 0.05764698553471759,
       "approximate": true
     },
     "alcohol_AD_MR": {
@@ -471,7 +471,7 @@
       "tau2": 0.012823498964803315,
       "beta_pooled": 0.3695121951219512,
       "k": 4,
-      "power": 0.7864926769192087,
+      "power": 0.78649267691921,
       "approximate": true
     },
     "T2D_CAD_MR": {
@@ -525,7 +525,7 @@
       "tau2": 0.02027527607361963,
       "beta_pooled": 0.49431255042065225,
       "k": 4,
-      "power": 0.6166597966908276,
+      "power": 0.61665979669083,
       "approximate": true
     },
     "fasting_glucose_T2D_MR": {
@@ -741,7 +741,7 @@
       "tau2": 0.00029516129032258065,
       "beta_pooled": 0.0507843137254902,
       "k": 4,
-      "power": 0.0810165117120224,
+      "power": 0.08101651171202673,
       "approximate": true
     },
     "CRP_depression_MR": {
@@ -831,7 +831,7 @@
       "tau2": 0.005097145814847679,
       "beta_pooled": 0.05302439024390244,
       "k": 4,
-      "power": 0.3754468190781567,
+      "power": 0.375446819078157,
       "approximate": true
     },
     "physical_activity_AD_MR": {
@@ -903,7 +903,7 @@
       "tau2": 0.013120238095238086,
       "beta_pooled": -0.6284879474068663,
       "k": 4,
-      "power": 0.2668608064559965,
+      "power": 0.2668608064559992,
       "approximate": true
     },
     "LDL_stroke_MR": {
@@ -939,7 +939,7 @@
       "tau2": 0.04870890843741281,
       "beta_pooled": 0.8937860244769048,
       "k": 4,
-      "power": 0.9798101411713499,
+      "power": 0.97981014117135,
       "approximate": true
     },
     "IL6R_CAD_MR": {
@@ -975,7 +975,7 @@
       "tau2": 0.029134081632653065,
       "beta_pooled": 0.5769660638081691,
       "k": 3,
-      "power": 0.6719940178842053,
+      "power": 0.671994017884206,
       "approximate": true
     },
     "smoking_COPD_MR": {
@@ -1029,7 +1029,7 @@
       "tau2": 0.0006600553205336825,
       "beta_pooled": 0.393720050441362,
       "k": 4,
-      "power": 0.0567407105559139,
+      "power": 0.056740710555918006,
       "approximate": true
     },
     "telomere_length_cancer_MR": {
@@ -1103,6 +1103,186 @@
       "k": 4,
       "power": 0.05,
       "approximate": true
+    },
+    "HLA_DRB1_RA_risk": {
+      "id": "HLA_DRB1_RA_risk",
+      "exposure": "HLA-DRB1 shared epitope",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "non-transport",
+      "verdict": "non-transport",
+      "correct": true,
+      "Q": 74.15692063131601,
+      "df": 3,
+      "p": 5.551115123125783e-16,
+      "I2": 0.9595452457510335,
+      "tau2": 0.12919551604174723,
+      "beta_pooled": 1.402520722152833,
+      "k": 4,
+      "power": 0.9999999973508007,
+      "approximate": true
+    },
+    "smoking_RA_seropositive": {
+      "id": "smoking_RA_seropositive",
+      "exposure": "Smoking (genetic)",
+      "outcome": "Seropositive rheumatoid arthritis",
+      "domain": "autoimmune",
+      "expected": "non-transport",
+      "verdict": "non-transport",
+      "correct": true,
+      "Q": 10.747501388117712,
+      "df": 2,
+      "p": 0.004636707783214122,
+      "I2": 0.8139102357119793,
+      "tau2": 0.021146644295302008,
+      "beta_pooled": 0.2975680177679067,
+      "k": 3,
+      "power": 0.7580907900613887,
+      "approximate": true
+    },
+    "sex_ratio_RA": {
+      "id": "sex_ratio_RA",
+      "exposure": "Female sex",
+      "outcome": "RA incidence ratio",
+      "domain": "autoimmune",
+      "expected": "non-transport",
+      "verdict": "non-transport",
+      "correct": true,
+      "Q": 82.7955576923077,
+      "df": 3,
+      "p": 0.0,
+      "I2": 0.9637661719587799,
+      "tau2": 0.1469063197026022,
+      "beta_pooled": 1.000923076923077,
+      "k": 4,
+      "power": 0.9999999998759986,
+      "approximate": true
+    },
+    "BMI_RA_MR": {
+      "id": "BMI_RA_MR",
+      "exposure": "BMI (genetic)",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "transport",
+      "verdict": "transport",
+      "correct": true,
+      "Q": 0.22914072229140736,
+      "df": 2,
+      "p": 0.8917491917158767,
+      "I2": 0.0,
+      "tau2": 0.0,
+      "beta_pooled": 0.13681195516811956,
+      "k": 3,
+      "power": 0.05,
+      "approximate": true
+    },
+    "alcohol_RA_MR": {
+      "id": "alcohol_RA_MR",
+      "exposure": "Alcohol consumption (genetic)",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "transport",
+      "verdict": "transport",
+      "correct": true,
+      "Q": 0.3224946695095948,
+      "df": 2,
+      "p": 0.8510815430280115,
+      "I2": 0.0,
+      "tau2": 0.0,
+      "beta_pooled": 0.012921108742004262,
+      "k": 3,
+      "power": 0.05,
+      "approximate": true
+    },
+    "IL6R_RA_MR": {
+      "id": "IL6R_RA_MR",
+      "exposure": "IL-6R signaling (genetic)",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "transport",
+      "verdict": "transport",
+      "correct": true,
+      "Q": 0.360655737704918,
+      "df": 2,
+      "p": 0.8349963972155894,
+      "I2": 0.0,
+      "tau2": 0.0,
+      "beta_pooled": 0.04032786885245901,
+      "k": 3,
+      "power": 0.05,
+      "approximate": true
+    },
+    "vitD_RA_MR": {
+      "id": "vitD_RA_MR",
+      "exposure": "Vitamin D (genetic)",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "transport",
+      "verdict": "transport",
+      "correct": true,
+      "Q": 0.18877192982456137,
+      "df": 2,
+      "p": 0.9099314928274829,
+      "I2": 0.0,
+      "tau2": 0.0,
+      "beta_pooled": -0.04719298245614035,
+      "k": 3,
+      "power": 0.05,
+      "approximate": true
+    },
+    "CRP_RA_MR": {
+      "id": "CRP_RA_MR",
+      "exposure": "CRP (genetic)",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "transport",
+      "verdict": "transport",
+      "correct": true,
+      "Q": 0.10013003901170348,
+      "df": 2,
+      "p": 0.9511675780442161,
+      "I2": 0.0,
+      "tau2": 0.0,
+      "beta_pooled": 0.018946684005201563,
+      "k": 3,
+      "power": 0.05,
+      "approximate": true
+    },
+    "IL6_cytokine_RA_MR": {
+      "id": "IL6_cytokine_RA_MR",
+      "exposure": "IL-6 cytokine level (genetic, rs1800795)",
+      "outcome": "Rheumatoid arthritis risk",
+      "domain": "autoimmune",
+      "expected": "non-transport",
+      "verdict": "non-transport",
+      "correct": true,
+      "Q": 10.926665772891809,
+      "df": 2,
+      "p": 0.004239402724831698,
+      "I2": 0.816961546955903,
+      "tau2": 0.018598882681564247,
+      "beta_pooled": 0.063425392143719,
+      "k": 3,
+      "power": 0.767081543835552,
+      "approximate": false
+    },
+    "RA_ILD_MR_multi_ancestry": {
+      "id": "RA_ILD_MR_multi_ancestry",
+      "exposure": "Rheumatoid arthritis (genetic)",
+      "outcome": "Interstitial lung disease",
+      "domain": "autoimmune",
+      "expected": "non-transport",
+      "verdict": "non-transport",
+      "correct": true,
+      "Q": 10.827744219954175,
+      "df": 1,
+      "p": 0.0009999038415055006,
+      "I2": 0.9076446598953524,
+      "tau2": 0.02359150000000001,
+      "beta_pooled": 0.11335430118725265,
+      "k": 2,
+      "power": 0.879994681878809,
+      "approximate": false
     }
   }
 }

@@ -1,40 +1,42 @@
 {
   "alpha": 0.05,
   "exclude_approximate": {
-    "n_exact": 3,
-    "n_approximate": 58,
+    "n_exact": 5,
+    "n_approximate": 66,
     "exact_ids": [
       "APOE4_AD_risk",
       "sex_tau_spread",
-      "age_lecanemab_response"
+      "age_lecanemab_response",
+      "IL6_cytokine_RA_MR",
+      "RA_ILD_MR_multi_ancestry"
     ],
     "exact_metrics": {
-      "accuracy": 0.6666666666666666,
-      "sensitivity": 0.6666666666666666,
+      "accuracy": 0.8,
+      "sensitivity": 0.8,
       "specificity": 0.0,
-      "tp": 2,
+      "tp": 4,
       "fn": 1,
       "fp": 0,
       "tn": 0,
-      "n_correct": 2,
-      "n_total": 3
+      "n_correct": 4,
+      "n_total": 5
     },
     "approximate_metrics": {
-      "accuracy": 0.8620689655172413,
-      "sensitivity": 0.5789473684210527,
+      "accuracy": 0.8787878787878788,
+      "sensitivity": 0.6363636363636364,
       "specificity": 1.0,
-      "tp": 11,
+      "tp": 14,
       "fn": 8,
       "fp": 0,
-      "tn": 39,
-      "n_correct": 50,
-      "n_total": 58
+      "tn": 44,
+      "n_correct": 58,
+      "n_total": 66
     }
   },
   "leave_one_out": {
-    "n_pairs": 61,
-    "n_stable": 52,
-    "pct_stable": 0.8524590163934426,
+    "n_pairs": 71,
+    "n_stable": 60,
+    "pct_stable": 0.8450704225352113,
     "unstable_pairs": [
       {
         "id": "HLA_DRB1_MS_risk",
@@ -125,13 +127,33 @@
         "flipped_strata": [
           "EAS_CKB"
         ]
+      },
+      {
+        "id": "smoking_RA_seropositive",
+        "expected": "non-transport",
+        "full_Q": 10.747501388117712,
+        "full_p": 0.004636707783214122,
+        "n_changed": 1,
+        "flipped_strata": [
+          "EAS"
+        ]
+      },
+      {
+        "id": "IL6_cytokine_RA_MR",
+        "expected": "non-transport",
+        "full_Q": 10.926665772891809,
+        "full_p": 0.004239402724831698,
+        "n_changed": 1,
+        "flipped_strata": [
+          "EUR"
+        ]
       }
     ]
   },
   "random_effects": {
-    "mean_beta_shift": 0.011931650138671625,
-    "max_beta_shift": 0.20223678091348873,
-    "mean_se_ratio": 1.5328045464018898,
+    "mean_beta_shift": 0.016927650193374968,
+    "max_beta_shift": 0.2423217498655008,
+    "mean_se_ratio": 1.6993328203728706,
     "max_se_ratio": 7.6501368713802895,
     "per_pair": [
       {
@@ -804,6 +826,116 @@
         "se_ratio": 1.0,
         "tau2": 0.0,
         "I2": 0.0
+      },
+      {
+        "id": "HLA_DRB1_RA_risk",
+        "expected": "non-transport",
+        "verdict": "non-transport",
+        "beta_fe": 1.402520722152833,
+        "beta_re": 1.1601989722873323,
+        "beta_shift": 0.2423217498655008,
+        "se_ratio": 5.842639135643965,
+        "tau2": 0.12919551604174723,
+        "I2": 0.9595452457510335
+      },
+      {
+        "id": "smoking_RA_seropositive",
+        "expected": "non-transport",
+        "verdict": "non-transport",
+        "beta_fe": 0.2975680177679067,
+        "beta_re": 0.28117316359652167,
+        "beta_shift": 0.01639485417138503,
+        "se_ratio": 2.3545174185400235,
+        "tau2": 0.021146644295302008,
+        "I2": 0.8139102357119793
+      },
+      {
+        "id": "sex_ratio_RA",
+        "expected": "non-transport",
+        "verdict": "non-transport",
+        "beta_fe": 1.000923076923077,
+        "beta_re": 0.9561460965194839,
+        "beta_shift": 0.044776980403593125,
+        "se_ratio": 5.57815087360545,
+        "tau2": 0.1469063197026022,
+        "I2": 0.9637661719587799
+      },
+      {
+        "id": "BMI_RA_MR",
+        "expected": "transport",
+        "verdict": "transport",
+        "beta_fe": 0.13681195516811956,
+        "beta_re": 0.13681195516811956,
+        "beta_shift": 0.0,
+        "se_ratio": 1.0,
+        "tau2": 0.0,
+        "I2": 0.0
+      },
+      {
+        "id": "alcohol_RA_MR",
+        "expected": "transport",
+        "verdict": "transport",
+        "beta_fe": 0.012921108742004262,
+        "beta_re": 0.012921108742004262,
+        "beta_shift": 0.0,
+        "se_ratio": 1.0,
+        "tau2": 0.0,
+        "I2": 0.0
+      },
+      {
+        "id": "IL6R_RA_MR",
+        "expected": "transport",
+        "verdict": "transport",
+        "beta_fe": 0.04032786885245901,
+        "beta_re": 0.04032786885245901,
+        "beta_shift": 0.0,
+        "se_ratio": 1.0,
+        "tau2": 0.0,
+        "I2": 0.0
+      },
+      {
+        "id": "vitD_RA_MR",
+        "expected": "transport",
+        "verdict": "transport",
+        "beta_fe": -0.04719298245614035,
+        "beta_re": -0.04719298245614035,
+        "beta_shift": 0.0,
+        "se_ratio": 1.0,
+        "tau2": 0.0,
+        "I2": 0.0
+      },
+      {
+        "id": "CRP_RA_MR",
+        "expected": "transport",
+        "verdict": "transport",
+        "beta_fe": 0.018946684005201563,
+        "beta_re": 0.018946684005201563,
+        "beta_shift": 0.0,
+        "se_ratio": 1.0,
+        "tau2": 0.0,
+        "I2": 0.0
+      },
+      {
+        "id": "IL6_cytokine_RA_MR",
+        "expected": "non-transport",
+        "verdict": "non-transport",
+        "beta_fe": 0.063425392143719,
+        "beta_re": 0.1553208071436022,
+        "beta_shift": 0.09189541499988318,
+        "se_ratio": 3.3252903249545978,
+        "tau2": 0.018598882681564247,
+        "I2": 0.816961546955903
+      },
+      {
+        "id": "RA_ILD_MR_multi_ancestry",
+        "expected": "non-transport",
+        "verdict": "non-transport",
+        "beta_fe": 0.11335430118725265,
+        "beta_re": 0.19199780701754385,
+        "beta_shift": 0.0786435058302912,
+        "se_ratio": 5.050955163214505,
+        "tau2": 0.02359150000000001,
+        "I2": 0.9076446598953524
       }
     ]
   }

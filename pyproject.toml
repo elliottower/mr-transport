@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mr-transport"
+version = "0.1.0"
+description = "Classify MR estimate transportability across ancestry strata via Cochran's Q with honest power reporting"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Elliot Tower", email = "elliot@elliottower.ai"},
+]
+keywords = ["mendelian-randomization", "transportability", "meta-analysis", "heterogeneity", "cochran-q"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.7.0"]
+notebook = ["matplotlib>=3.7.0", "jupyter>=1.0.0", "pandas>=2.0.0"]
+dev = ["pytest>=7.0.0"]
+
+[project.urls]
+Repository = "https://github.com/elliottower/mr-transport"
+Documentation = "https://github.com/elliottower/mr-transport#readme"
+Issues = "https://github.com/elliottower/mr-transport/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["mr_transport*"]
+
+[tool.setuptools.package-data]
+"mr_transport.data" = ["*.json"]

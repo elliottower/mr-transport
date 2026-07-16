@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "Sheaf Q Tests Classify Mendelian Randomization Transportability and Recover Causal DAG Structure Across Five Clinical Domains"
+title: "Sheaf Q Tests Classify Mendelian Randomization Transportability and Recover Causal DAG Structure Across Six Clinical Domains"
 authors:
   - family-names: Tower
     given-names: Elliot
