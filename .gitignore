@@ -23,6 +23,9 @@ build/
 # Environments
 .venv/
 
+# Test / cache
+.pytest_cache/
+
 # OS
 .DS_Store
 __pycache__/
