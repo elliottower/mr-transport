@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-17
 **Author:** Elliot Tower
-**Frozen at commit SHA:** [TO BE FILLED AT COMMIT TIME]
+**Frozen at commit SHA:** 85de0af
 
 **Freeze this before running `swap_tier1_real_data.py` against `pairs_curated.json`.**
 
