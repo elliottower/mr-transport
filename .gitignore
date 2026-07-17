@@ -12,8 +12,8 @@
 submission/
 SUBMISSIONS.md
 
-# Paper builds
-paper/
+# Paper drafts (versioned drafts, venue-specific variants, cover letters)
+paper_drafts/
 
 # Build artifacts
 *.egg-info/
@@ -30,3 +30,8 @@ build/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Downloaded data (tabix indices, caches, manifests)
+*.tbi
+tabix_cache/
+phenotype_manifest.tsv.bgz

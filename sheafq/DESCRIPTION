@@ -1,0 +1,20 @@
+Package: sheafq
+Title: Vector-Valued Sheaf Q Tests for Multi-Trait Heterogeneity
+Version: 0.1.0
+Authors@R: person("Elliot", "Tower", email = "elliot@elliottower.ai",
+                   role = c("aut", "cre"))
+Description: Implements the vector-valued sheaf Q statistic for detecting
+    effect vector rotation in multi-ancestry, multi-trait meta-analyses.
+    On scalar stalks (d=1), sheaf Q reduces algebraically to Cochran's Q.
+    On vector-valued stalks (d>1), the multivariate sheaf Q detects
+    coordinated heterogeneity patterns—such as effect vector rotation—that
+    d independent scalar Q tests cannot detect. Includes locus classification
+    (concordant, rotation-only, component-only) and rotation angle computation.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: R (>= 3.5.0)
+Imports: stats
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
