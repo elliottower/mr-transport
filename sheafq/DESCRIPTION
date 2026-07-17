@@ -16,5 +16,11 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: R (>= 3.5.0)
 Imports: stats
-Suggests: testthat (>= 3.0.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/elliottower/mr-transport
+BugReports: https://github.com/elliottower/mr-transport/issues

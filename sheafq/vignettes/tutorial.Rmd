@@ -1,0 +1,225 @@
+---
+title: "Detecting Effect Vector Rotation with sheafq"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Detecting Effect Vector Rotation with sheafq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(sheafq)
+```
+
+## What sheafq does
+
+Multi-ancestry Mendelian randomization estimates sometimes disagree across
+populations. Standard practice runs Cochran's Q on each trait separately, but
+this misses a specific failure mode: **effect vector rotation**, where per-trait
+effect magnitudes look similar but the joint direction of the effect vector
+changes across ancestries.
+
+`sheafq` implements the vector-valued sheaf Q statistic, which tests for
+heterogeneity in the joint effect vector. On a single trait (d = 1), it reduces
+algebraically to Cochran's Q. On multiple traits (d > 1), it detects rotation
+that d independent scalar tests cannot.
+
+This tutorial walks through four use cases:
+
+1. ACKR1/Duffy: a textbook rotation locus
+2. Comparing vector Q to per-trait scalar Q
+3. The role of trait correlations
+4. Bring your own data
+
+## Case 1: ACKR1/Duffy — effect vector rotation across ancestries
+
+The ACKR1/Duffy locus (rs2814778) affects multiple blood cell traits. The
+Duffy-null allele, nearly fixed in sub-Saharan African populations due to
+malaria selection, eliminates ACKR1-mediated chemokine scavenging. This
+produces a coordinated multi-trait shift — a rotation, not a uniform scaling —
+across ancestries.
+
+```{r ackr1-data}
+# Per-ancestry effect estimates at ACKR1 for 5 blood traits
+# Rows: EUR, EAS, AFR, CSA, AMR, MID
+# Columns: neutrophil, monocyte, basophil, WBC, eosinophil
+beta <- matrix(c(
+   0.15,  0.08,  0.03,  0.12,  0.02,
+   0.18,  0.10,  0.02,  0.14,  0.03,
+  -0.25,  0.35,  0.20, -0.10,  0.15,
+   0.12,  0.06,  0.04,  0.10,  0.01,
+   0.08,  0.12,  0.06,  0.05,  0.04,
+   0.14,  0.09,  0.03,  0.11,  0.02
+), nrow = 6, byrow = TRUE)
+
+se <- matrix(c(
+  0.02, 0.02, 0.01, 0.02, 0.01,
+  0.03, 0.03, 0.02, 0.03, 0.02,
+  0.04, 0.04, 0.03, 0.04, 0.03,
+  0.03, 0.03, 0.02, 0.03, 0.02,
+  0.04, 0.04, 0.03, 0.04, 0.03,
+  0.03, 0.03, 0.02, 0.03, 0.02
+), nrow = 6, byrow = TRUE)
+
+rownames(beta) <- rownames(se) <- c("EUR", "EAS", "AFR", "CSA", "AMR", "MID")
+colnames(beta) <- colnames(se) <- c("Neutrophil", "Monocyte", "Basophil", "WBC", "Eosinophil")
+```
+
+Run the vector sheaf Q test:
+
+```{r ackr1-vector}
+result <- vector_sheaf_q_diagonal(beta, se)
+cat(sprintf("Q_V = %.1f, df = %d, p = %.2e\n", result$Q_V, result$df, result$p))
+```
+
+Now check if individual scalar Q tests on each trait detect this:
+
+```{r ackr1-scalar}
+d <- ncol(beta)
+alpha_bonf <- 0.05 / d
+
+for (j in seq_len(d)) {
+  sq <- scalar_cochran_q(beta[, j], se[, j])
+  sig <- if (sq$p < alpha_bonf) "*" else " "
+  cat(sprintf("  %-12s  Q = %6.2f  p = %.4f  I2 = %.1f%%  %s\n",
+              colnames(beta)[j], sq$Q, sq$p, sq$I2 * 100, sig))
+}
+```
+
+The vector test detects coordinated heterogeneity that some individual scalar
+tests miss. The rotation angle shows which ancestry pair diverges most:
+
+```{r ackr1-rotation}
+rot <- max_rotation(beta)
+cat(sprintf("Maximum rotation: %.1f degrees (between %s and %s)\n",
+            rot$theta_max,
+            rownames(beta)[rot$pair[1]],
+            rownames(beta)[rot$pair[2]]))
+```
+
+## Case 2: Vector Q vs scalar Q — when they agree and when they don't
+
+`classify_locus()` runs both tests and assigns one of four categories:
+
+- **concordant_significant**: both vector Q and at least one scalar Q significant
+- **concordant_null**: neither detects heterogeneity
+- **rotation_only**: vector Q significant, no individual scalar Q significant (after Bonferroni)
+- **component_only**: at least one scalar Q significant, but vector Q is not (rare)
+
+```{r classify}
+result <- classify_locus(beta, se)
+cat(sprintf("Category: %s\n", result$category))
+cat(sprintf("Vector Q_V: %.1f (p = %.2e)\n",
+            result$vector_result$Q_V, result$vector_result$p))
+cat(sprintf("Max rotation: %.1f degrees\n", result$rotation$theta_max))
+```
+
+A "rotation_only" classification means the heterogeneity is invisible to
+per-trait analysis. The vector test detects it because it accounts for the
+coordinated shift in the joint effect vector.
+
+## Case 3: Why trait correlations matter
+
+Blood traits measured on the same individuals are correlated (shared hematopoietic
+pathways). When you know the within-stratum trait correlations, `vector_sheaf_q_correlated()`
+uses them to build a more accurate covariance model.
+
+```{r correlated}
+# With diagonal covariance (assumes independent traits):
+diag_result <- vector_sheaf_q_diagonal(beta, se)
+
+# With a compound-symmetric correlation (rho = 0.4 across all traits):
+d <- ncol(beta)
+rho <- 0.4
+rho_matrix <- matrix(rho, nrow = d, ncol = d)
+diag(rho_matrix) <- 1
+
+corr_result <- vector_sheaf_q_correlated(beta, se, rho_matrix)
+
+cat(sprintf("Diagonal Q_V:    %8.1f  (p = %.2e)\n",
+            diag_result$Q_V, diag_result$p))
+cat(sprintf("Correlated Q_V:  %8.1f  (p = %.2e)\n",
+            corr_result$Q_V, corr_result$p))
+cat(sprintf("Ratio Q_V / sum(scalar Q): %.2f\n",
+            corr_result$Q_V / corr_result$sum_scalar_Q))
+```
+
+When traits are positively correlated and heterogeneity is
+rotation-like, the correlated Q_V diverges upward from the sum of scalar Q
+tests. This ratio > 1 is the signature of covariance-mediated heterogeneity
+that per-trait tests cannot capture.
+
+**Key invariant**: with diagonal covariance (rho = 0), Q_V equals the sum of
+scalar Q tests exactly. The correlated version diverges only when off-diagonal
+structure interacts with the heterogeneity pattern.
+
+```{r invariant}
+cat(sprintf("Diagonal: Q_V = %.4f, sum(scalar) = %.4f, difference = %.1e\n",
+            diag_result$Q_V, diag_result$sum_scalar_Q,
+            abs(diag_result$Q_V - diag_result$sum_scalar_Q)))
+```
+
+## Case 4: Bring your own data
+
+Replace the matrices below with your own per-ancestry, per-trait MR estimates.
+
+```{r byod}
+# Your data: K ancestries x d traits
+my_beta <- matrix(c(
+  0.25, 0.10,   # Ancestry 1
+  0.23, 0.12,   # Ancestry 2
+  0.28, 0.08    # Ancestry 3
+), nrow = 3, byrow = TRUE)
+
+my_se <- matrix(c(
+  0.05, 0.03,
+  0.06, 0.04,
+  0.07, 0.05
+), nrow = 3, byrow = TRUE)
+
+rownames(my_beta) <- rownames(my_se) <- c("EUR", "EAS", "AFR")
+colnames(my_beta) <- colnames(my_se) <- c("LDL", "HDL")
+
+# Run vector Q
+vq <- vector_sheaf_q_diagonal(my_beta, my_se)
+cat(sprintf("Vector Q_V = %.2f, df = %d, p = %.4f\n", vq$Q_V, vq$df, vq$p))
+
+# Run per-trait scalar Q for comparison
+for (j in seq_len(ncol(my_beta))) {
+  sq <- scalar_cochran_q(my_beta[, j], my_se[, j])
+  cat(sprintf("  %s: Q = %.2f, p = %.4f, I2 = %.0f%%\n",
+              colnames(my_beta)[j], sq$Q, sq$p, sq$I2 * 100))
+}
+
+# Classify
+cl <- classify_locus(my_beta, my_se)
+cat(sprintf("Classification: %s\n", cl$category))
+cat(sprintf("Max rotation: %.1f degrees\n", cl$rotation$theta_max))
+```
+
+### With known trait correlations
+
+If your traits were measured in the same sample and you have the phenotypic
+correlation matrix:
+
+```{r byod-correlated}
+rho <- matrix(c(1.0, -0.3,
+               -0.3,  1.0), nrow = 2)
+
+vq_corr <- vector_sheaf_q_correlated(my_beta, my_se, rho)
+cat(sprintf("Correlated Q_V = %.2f (p = %.4f)\n", vq_corr$Q_V, vq_corr$p))
+cat(sprintf("Q_V / sum(scalar): %.2f\n", vq_corr$Q_V / vq_corr$sum_scalar_Q))
+```
+
+## Interpretation guide
+
+| Q_V significant? | Any scalar Q significant? | Category | Interpretation |
+|:-:|:-:|:--|:--|
+| Yes | Yes | concordant_significant | Strong heterogeneity visible in both joint and marginal tests |
+| No | No | concordant_null | No detectable heterogeneity |
+| Yes | No | rotation_only | Effect vector rotates across ancestries, but no single trait is heterogeneous enough to detect alone |
+| No | Yes | component_only | Rare: anti-correlated heterogeneity cancels in the joint test |
+
+The "rotation_only" category is the reason sheafq exists. These loci would be
+missed entirely by standard per-trait Cochran's Q analysis.
