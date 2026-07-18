@@ -1,8 +1,0 @@
-export(scalar_cochran_q)
-export(vector_sheaf_q)
-export(vector_sheaf_q_diagonal)
-export(vector_sheaf_q_correlated)
-export(rotation_angle)
-export(max_rotation)
-export(classify_locus)
-importFrom(stats, pchisq)
