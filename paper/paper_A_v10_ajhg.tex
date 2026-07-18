@@ -200,7 +200,7 @@ Applying Benjamini--Hochberg FDR control at $q = 0.05$ across all 71 tests chang
 \paragraph{Comparison with $I^2$ thresholds.}
 A natural baseline is the $I^2$ statistic \citep{higgins2002quantifying}, which measures the proportion of variance attributable to between-stratum heterogeneity.
 At fixed degrees of freedom, $I^2 = (Q - (k-1))/Q$ is a monotone transform of $Q$, so classifying by $I^2 > c$ is mathematically equivalent to the $Q$ test at a different $\alpha$.
-An $I^2 > 0.50$ classifier achieves comparable accuracy to the $Q$ test at $\alpha = 0.10$ (Table~\ref{tab:realdata-sensitivity}).
+An $I^2 > 0.50$ classifier achieves comparable accuracy to the $Q$ test at $\alpha = 0.10$ (Supplementary Material~S12).
 Of the 44 transport pairs, 39 have $Q < 1$; four others remain below the $\chi^2$ threshold (SBP$\to$CAD at $1.40$, smoking$\to$schizophrenia at $1.56$, T2D$\to$CAD at $2.32$, IL6R$\to$CAD at $2.65$), and LDL$\to$stroke ($Q = 12.09$, $I^2 = 0.67$) is the sole transport pair exceeding the threshold, whose population-set dependence is analyzed in \S\ref{sec:realdata-ldl-stroke}.
 The $Q$ test provides calibrated Type~I error control via the $\chi^2$ distribution, whereas $I^2$ thresholds such as the conventional $50\%$ cutoff \citep{higgins2003measuring} are not tied to a formal hypothesis test.
 The sensitivity analysis (\S\ref{sec:realdata-sensitivity}) explores this threshold space explicitly.
