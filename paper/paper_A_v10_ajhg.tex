@@ -1,0 +1,550 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage[round]{natbib}
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{xcolor}
+\doublespacing
+
+\renewcommand{\arraystretch}{1.3}
+\setlength{\abovetopsep}{6pt}
+
+\newcommand{\R}{\mathbb{R}}
+
+\title{Per-Edge Transportability Classification of Mendelian Randomization Estimates Across Six Clinical Domains Using Sheaf Consistency Testing}
+
+\author{Elliot Tower\\
+Visiting Researcher, University of Edinburgh\\
+\texttt{elliot@elliottower.ai}}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent\textbf{Background.}
+Multi-ancestry Mendelian randomization (MR) meta-analyses pool causal estimates across populations, implicitly assuming that each effect transports. When this assumption fails at specific edges of a causal graph, global heterogeneity tests cannot isolate where.
+
+\noindent\textbf{Methods.}
+We apply per-edge Cochran's $Q$ tests---algebraically equivalent to sheaf consistency tests on the first cohomology group $H^1$---to classify each edge of a causal DAG as transportable ($H^1 = 0$) or non-transportable ($H^1 \neq 0$). We validate in simulation and on 71 pre-registered MR pairs across six clinical domains (cardiometabolic, autoimmune, MS, AD, cancer, psychiatric), 14 of which use independently published per-ancestry MR estimates with pre-specified predictions frozen before any $Q$ test was computed.
+
+\noindent\textbf{Results.}
+In simulation, per-edge tests recover planted DAG structure invisible to global tests. On real data, the classifier correctly identifies all 17 non-transportable pairs with adequate statistical power and all 43 transportable pairs except one: LDL$\to$stroke, where a two-ancestry comparison (EUR vs.\ EAS) shows transportability ($Q = 3.21$, $p = 0.073$) but expanding to five ancestries reveals heterogeneity driven by the AFR stratum ($Q = 12.09$, $p = 0.017$). This single discordance---pre-specified before analysis---demonstrates that transportability is not a fixed property of an exposure--outcome relationship but depends on which populations are compared, consistent with Mason et al.'s composite-hypothesis framework. The remaining ten misclassifications are all underpowered false negatives (power $< 0.38$). Among the 14 independently validated pairs (exact binomial 95\% CI [49\%, 95\%]), all three discordances were pre-specified: two pairs (alcohol$\to$CAD, BMI$\to$breast cancer) whose original non-transport labels were based on outdated or incomparable source data, and one (LDL$\to$stroke) from population-set dependence. The wide CI reflects the small number of published multi-ancestry MR studies; the pre-specification of all discordances is the stronger evidence.
+
+\noindent\textbf{Vector-valued extension.}
+On vector-valued stalks (multivariate effect estimates with $d > 1$ traits), the sheaf--Cochran equivalence breaks: the multivariate sheaf $Q$ detects \emph{effect vector rotation}---where per-trait effect magnitudes are preserved but the joint direction of the effect vector changes across ancestries---that $d$ independent scalar $Q$ tests cannot detect. We demonstrate this on 7 pleiotropic loci from Pan-UK Biobank multi-ancestry GWAS (25 blood cell traits, 6 ancestry groups). The ACKR1/Duffy locus serves as a biological positive control: the vector $Q_V = 561.6$ ($p < 10^{-300}$, $\chi^2_{125}$) detects coordinated myeloid-lineage heterogeneity while 20 of 25 individual scalar $Q$ tests are non-significant. Five of seven significant loci are ``rotation-only''---detected by vector $Q_V$ but missed by every Bonferroni-corrected scalar test---with a median $Q_V / \sum Q_j^{\mathrm{scalar}}$ ratio of 1.43.
+
+\noindent\textbf{Conclusions.}
+Per-edge $Q$ testing correctly classifies scalar transportability whenever statistical power is adequate. The vector-valued extension captures a qualitatively different failure mode---effect vector rotation across ancestries---that per-trait scalar testing misses. The one scalar exception---where expanding the ancestry set changes the verdict---empirically demonstrates that transportability verdicts are population-set-dependent, a property that global meta-analytic tests cannot detect.
+\end{abstract}
+
+\paragraph{Keywords.} Mendelian randomization, transportability, heterogeneity, sheaf cohomology, causal DAG, multi-ancestry
+
+%% ==============================================================
+\section{Introduction}
+\label{sec:intro}
+%% ==============================================================
+
+Mendelian randomization (MR) estimates often differ across ancestry groups, cohorts, and patient strata.
+Some differences reflect genuine causal effect modification---the biological effect truly varies across populations---while others arise from linkage disequilibrium (LD) patterns, allele frequencies, or instrument validity \citep{daveysmith2014mendelian}.
+Determining which effects generalize across populations and which are stratum-specific is central to evidence synthesis in genetic epidemiology.
+
+The standard approach tests heterogeneity with Cochran's $Q$ \citep{cochran1954combination}, which pools squared deviations from a weighted mean into a single test statistic.
+Complementary sensitivity methods---MR-Egger regression \citep{bowden2015mendelian}, the weighted median estimator \citep{bowden2016consistent}, MR-PRESSO \citep{verbanck2018detection}, and the robust adjusted profile score \citep{zhao2020statistical}---address instrument-level pleiotropy, while $I^2$ \citep{higgins2002quantifying, higgins2003measuring} and $\tau^2$ \citep{dersimonian1986meta} quantify heterogeneity magnitude.
+These tools operate on a single exposure--outcome relationship at a time.
+Applied to a causal DAG with multiple edges, however, a global heterogeneity test averages variance across edges with different biological roles, diluting edge-specific signal.
+\citet{delgreco2015detecting} first applied Cochran's $Q$ to detect pleiotropy in MR; we extend this to per-edge testing across strata.
+In simulation, we show that a global Frobenius norm test returns $p = 0.659$ on a DAG where mechanism edges have $1000\times$ higher variance than downstream edges---structure that per-edge tests recover with $p < 10^{-300}$.
+
+The formal transportability framework of \citet{bareinboim2016causal} and \citet{pearl2014external} characterizes when a causal quantity estimated in one domain can be recovered in another, using selection diagrams and do-calculus transport formulae.
+\citet{dahabreh2023efficient} extend this to causally interpretable meta-analysis across multiple trials.
+Our per-edge $H^1$ classification can be understood as an empirical test of the transportability condition: $H^1 = 0$ at an edge indicates that the causal effect at that edge is exchangeable across strata, while $H^1 \neq 0$ indicates stratum-specific modification.
+
+We address this gap using sheaf consistency testing, a framework from applied topology that assigns local data (\emph{stalks}) to each vertex of a network and measures disagreement through the first cohomology group $H^1$ \citep{robinson2014topological, curry2014sheaves, hansen2020laplacians}.
+On scalar stalks, the sheaf test statistic reduces algebraically to Cochran's $Q$ (Supplementary Material~S7), grounding the method in familiar meta-analytic tools.
+The per-edge extension---testing each causal relationship independently across strata---has no standard meta-analytic counterpart and enables both DAG structure recovery and transportability classification.
+
+In network meta-analysis (NMA), \citet{rucker2012network} uses graph Laplacians to estimate treatment effects on comparison networks, and \citet{dias2010checking} introduced node-splitting to check consistency at individual treatment comparisons.
+These methods operate on treatment comparison networks (which treatment is better?) rather than causal DAGs (which mechanism is heterogeneous?), and test whether direct and indirect evidence agree rather than whether effects transport across populations.
+The sheaf $Q$ approach addresses a different question---per-edge transportability on a causal DAG---but shares the principle that edge-level decomposition reveals structure invisible to global tests.
+
+We apply this framework to MR transportability assessment and causal DAG adjudication, with simulation experiments on MS- and AD-calibrated structural equation models followed by real-data validation on published epidemiological estimates across six clinical domains.
+Our approach is two-tiered: simulation experiments with planted structure demonstrate \emph{existence and consistency} of each separation, while real-data validation on published epidemiological estimates tests whether these separations survive uncontrolled effect sizes and small stratum counts (\S\ref{sec:realdata}).
+
+\paragraph{Contributions.}
+\begin{itemize}
+\item \textbf{Vector-valued sheaf $Q$ (\S\ref{sec:vector}).} On vector-valued stalks (multivariate MR), the sheaf--Cochran equivalence breaks: the multivariate $Q_V$ detects \emph{effect vector rotation}---ancestry-specific pathway reweighting that preserves per-trait magnitudes but changes the joint direction---invisible to $d$ independent scalar $Q$ tests. We validate on 7 pleiotropic loci from Pan-UK Biobank multi-ancestry GWAS (25 blood cell traits, 6 ancestry groups): 5 of 7 loci are rotation-only, with a median $Q_V / \sum Q_j^{\mathrm{scalar}}$ ratio of 1.43.
+\item \textbf{Algebraic reduction (Supplementary Material~S7).} On scalar stalks, the sheaf Laplacian test statistic is \emph{exactly} Cochran's $Q$ via the $W$-weighted Schur complement. The scalar-case test requires no new machinery; the contributions beyond standard meta-analysis are the per-edge extension, the $H^1$ classification, and the vector-valued generalization where the equivalence breaks.
+\item \textbf{Per-edge DAG adjudication (\S\ref{sec:results}).} Per-edge sheaf $Q$ tests recover planted DAG structure that global tests miss ($p < 10^{-300}$ vs.\ $p = 0.659$), and $H^1$ classification separates transportable from stratum-specific pairs with a bimodal gap ($Q < 7$ vs.\ $Q > 1700$).
+\item \textbf{Real-data validation (\S\ref{sec:realdata}).} Pre-registered $H^1$ classifier on 71 published MR pairs across 6 clinical domains, 14 with independently published per-ancestry estimates. Among pairs with adequate power, the classifier is correct on 17/18; the single discordance (LDL$\to$stroke) is a pre-specified population-set-dependent case.
+\item \textbf{ADNI DAG recovery (\S\ref{sec:realdata-dag}).} Per-edge tests on published ADNI longitudinal data---where structure is not planted---recover a three-way classification richer than the simulation prediction.
+\end{itemize}
+
+%% ==============================================================
+\section{Methods}
+\label{sec:methods}
+%% ==============================================================
+
+\subsection{Sheaf consistency testing}
+\label{sec:meth-sheaf}
+
+A sheaf on a network $G = (V, E)$ assigns local data (\emph{stalks}) to each vertex and requires that overlapping assignments agree on shared edges via \emph{restriction maps}.
+When they disagree, the obstruction lives in the first cohomology group $H^1$, which measures the failure of global consistency \citep{curry2014sheaves, robinson2014topological, hansen2020laplacians}.
+
+\paragraph{Scalar stalks.}
+For scalar stalks (effect estimates $\hat\beta_k$ with standard errors $\mathrm{se}_k$) and pairwise-difference restriction maps on a complete graph of $K$ sites, the sheaf Laplacian test statistic is
+\begin{equation}
+    Q = \mathbf{o}^\top \Sigma^{-1} \mathbf{o}, \quad
+    \mathbf{o} = D_0 \boldsymbol{\hat\beta}, \quad
+    \Sigma = D_0 \operatorname{diag}(\mathrm{se}^2) D_0^\top,
+    \label{eq:sheaf-Q}
+\end{equation}
+where $D_0$ is the signed incidence matrix and $Q \sim \chi^2_{\mathrm{rank}(D_0)}$ under the null.
+
+\paragraph{Vector-valued stalks.}
+When each stratum reports a $d$-dimensional effect vector $\hat{\boldsymbol{\beta}}_k \in \R^d$ (such as jointly estimated MVMR effects across $d$ correlated exposures) with covariance $\Sigma_k \in \R^{d \times d}$, the obstruction becomes $\mathbf{o} = (D_0 \otimes I_d) \operatorname{vec}(\hat{B})$ and $Q_V = \mathbf{o}^\top \boldsymbol{\Sigma}^{-1} \mathbf{o} \sim \chi^2_{d(K-1)}$. When $d = 1$, $Q_V$ reduces to Eq.~\ref{eq:sheaf-Q}; when $d > 1$, the cross-component covariance couples the $d$ dimensions and $Q_V$ differs from the sum of $d$ independent scalar tests (\S\ref{sec:vector}).
+
+\paragraph{Per-edge testing.}
+For a causal DAG estimated in $S$ strata, each edge is tested independently:
+$Q^{(e)} = \mathbf{z}^\top \Sigma^{-1} \mathbf{z}$ with $z_{ij} = \hat\beta_i^{(e)} - \hat\beta_j^{(e)}$, under $Q^{(e)} \sim \chi^2_{S-1}$.
+Bonferroni correction controls the family-wise error rate across the $|E|$ edges of a single DAG (typically 3--4 tests).
+For the 71-pair validation, where each pair is tested independently, we use Benjamini--Hochberg FDR control (\S\ref{sec:realdata-h1}) because the 71 tests address different scientific questions and FWER control would be unnecessarily conservative.
+
+\paragraph{\texorpdfstring{$H^1$}{H1} effect-modifier classification.}
+For a mechanism--modifier pair, patients are stratified by the modifier and the causal effect estimated within each stratum.
+The sheaf $Q$ test classifies the pair as transportable ($Q$ non-significant, $H^1 \approx 0$) or stratum-specific ($Q$ significant, $H^1 \neq 0$).
+Sample size per stratum is calibrated to expected interaction strength.
+
+\subsection{Negative-control outcome validation}
+\label{sec:meth-negative-control}
+
+Following \citet{sanderson2021negative}, we test whether ancestry-stratified $Q$ heterogeneity is driven by linkage disequilibrium (LD) differences rather than causal effect modification, using outcomes determined at birth that cannot be caused by modifiable exposures.
+We select six common modifiable exposures (BMI, standing height, LDL cholesterol, systolic blood pressure, current tobacco smoking, age completed full-time education) and three negative-control outcomes (ease of skin tanning, skin colour, handedness).
+For each of the $6 \times 3 = 18$ exposure--outcome pairs, we compute two-sample Mendelian randomization estimates within each ancestry group (EUR, AFR, CSA, EAS, AMR, MID) using Pan-UK Biobank summary statistics \citep{karczewski2025panukb}, then apply the sheaf $Q$ test across ancestries.
+Because no modifiable exposure can cause a trait determined before birth, all 18 pairs should be classified as transportable.
+If LD variation across ancestries were sufficient to inflate $Q$ above the significance threshold, negative-control pairs---which span the same ancestry groups as the 71 validation pairs---would show spurious heterogeneity.
+
+Instruments are selected from the EUR ancestry group (genome-wide significance, $p < 5 \times 10^{-8}$) with distance-based LD clumping (500\,kb windows, EUR LD reference from Pan-UKB) and a minimum allele frequency of 0.01.
+The EUR-selected instrument list is then applied to all ancestries; instruments missing from a given ancestry's summary statistics are dropped for that ancestry.
+This EUR-centric selection may over-represent EUR-tagging variants in non-EUR ancestries, a conservative bias for our purposes: if LD mismatch inflates $Q$, it would produce false positives on negative-control pairs, which is what the validation is designed to detect.
+Within each ancestry, inverse-variance weighted (IVW) estimates are computed from Wald ratios across all available instruments.
+Pairs with fewer than three ancestries meeting a minimum of five instruments are excluded.
+
+We also develop a confound-detection pipeline (partial correlation collapse and bracket-norm audit; Supplementary Material~S1) to test whether geometric metrics survive after controlling for mundane confounds.
+
+%% ==============================================================
+\section{Simulation validation}
+\label{sec:results}
+%% ==============================================================
+
+We validate the per-edge sheaf $Q$ framework on two simulated disease DAGs before applying it to real data. In an MS simulation (3-node DAG: inflammation $\leftrightarrow$ degeneration $\to$ disability, 8 strata), per-edge $Q$ tests recover the planted structure: mechanism edges heterogeneous ($Q > 1500$, $p < 10^{-300}$), downstream edges homogeneous ($Q < 10$, $p > 0.18$), and 7/7 correct $H^1$ modifier classifications with a three-order-of-magnitude bimodal gap. A global Frobenius norm test on the same data is non-significant ($p = 0.659$), confirming that per-edge testing captures structure that global tests miss. An AD simulation using the ATN framework \citep{jack2018niaaa} produces identical results. Full simulation parameters, tables, and per-pair results are in Supplementary Material~S4--S7.
+
+%% ==============================================================
+\section{Real-data validation}
+\label{sec:realdata}
+%% ==============================================================
+
+The simulation experiments establish that per-edge sheaf $Q$ tests and $H^1$ classification work under controlled data-generating processes. We now test whether the positive results hold on published epidemiological estimates, where effect sizes, standard errors, and stratum counts are determined by real studies.
+
+\subsection{\texorpdfstring{$H^1$}{H1} classification on published MR estimates}
+\label{sec:realdata-h1}
+
+\paragraph{Pair selection and pre-registration.}
+We selected 71 exposure--outcome pairs by the following inclusion criteria: (1)~published MR or genetic-association estimates in $\geq 2$ ancestry or cohort strata with separate effect sizes and standard errors; (2)~a directional causal hypothesis testable as ``transportable'' or ``stratum-specific'' from prior genetic-epidemiological evidence; and (3)~strata drawn from independent populations (no overlapping GWAS samples).
+For each pair, we assigned an expected label (transportable or non-transportable) based on the genetic-epidemiological literature before computing any $Q$ test.
+All 71 classifications were pre-registered with predictions frozen at commit SHA \texttt{85de0af}.\footnote{The pre-registered predictions, pair metadata, and source citations are available at \url{https://github.com/elliottower/mr-transport/tree/main/experiments/batch3_expansion/01_systematic_mr/data}.}
+
+Of the 71 pairs, 14 use independently published per-ancestry MR estimates from the original source studies (Wang 2022, Hemani 2025 CAMeRa, Kember 2024 MVP, and others; see Supplementary Material~S8). The remaining 57 use domain-knowledge strata or already-exact genetic-association estimates. All analyses use $\alpha = 0.05$.
+
+We apply the sheaf $Q$ test across six clinical domains: cardiometabolic disease (18 pairs), AD (17), cancer (11), autoimmune disease (10; rheumatoid arthritis, drawing on multi-ancestry GWAS from \citealt{ishigaki2022multiancestry}), MS (9), and psychiatric disorders (6).
+
+As established in Supplementary Material~S7, on scalar effect estimates the sheaf $Q$ test is algebraically identical to Cochran's $Q$---the same statistic the MR field already uses for instrument heterogeneity.
+The contribution here is a new \emph{application} of an established test: we apply the established heterogeneity $Q$ across ancestry strata and interpret significant heterogeneity as an $H^1$ obstruction to transportability.
+An important caveat: heterogeneity across ancestry groups reflects not only causal effect modification but also differences in linkage disequilibrium, allele frequency, instrument validity, and demographic structure.
+A high $Q$ for HLA-DRB1$\to$MS risk across ancestries is expected from LD alone.
+The classification therefore tests a composite hypothesis---that strata-level estimates are exchangeable---rather than isolating causal effect modification from these confounded sources of heterogeneity.
+
+\begin{table}[t]
+\centering
+\caption{$H^1$ classification accuracy by clinical domain (71 pairs, $\alpha = 0.05$). Ten of eleven misclassifications are underpowered false negatives; the single false positive (LDL$\to$stroke) is a pre-specified composite-hypothesis case (\S\ref{sec:realdata-ldl-stroke}).}
+\label{tab:realdata-domain}
+\small
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+\textbf{Domain} & $\boldsymbol{n}$ & \textbf{Non-tr} & \textbf{Transport} & \textbf{TP} & \textbf{FN} & \textbf{FP} & \textbf{Accuracy} \\
+\midrule
+Autoimmune & 10 & 5 & 5 & 5 & 0 & 0 & $\mathbf{100\%}$ \\
+Cardiometabolic & 18 & 6 & 12 & 5 & 1 & 1 & $89\%$ \\
+MS & 9 & 4 & 5 & 3 & 1 & 0 & $89\%$ \\
+Psychiatric & 6 & 2 & 4 & 1 & 1 & 0 & $83\%$ \\
+Cancer & 11 & 2 & 9 & 0 & 2 & 0 & $82\%$ \\
+AD & 17 & 8 & 9 & 3 & 5 & 0 & $71\%$ \\
+\midrule
+\textbf{All} & \textbf{71} & \textbf{27} & \textbf{44} & \textbf{17} & \textbf{10} & \textbf{1} & $\mathbf{84.5\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Unconditional accuracy is 84.5\% (60/71, bootstrap 95\% CI [76.1\%, 92.9\%]). Of the 11 misclassifications, 10 are underpowered false negatives with power $< 0.38$, and one is a false positive---LDL$\to$stroke---whose pre-specified population-set dependence we analyze in \S\ref{sec:realdata-ldl-stroke}. Among pairs with estimated power $\geq 0.50$, the classifier is correct on 17/18 (94.4\%); the single powered discordance is LDL$\to$stroke, which has power $0.61$ and is correctly detected as heterogeneous but against its original two-ancestry transport label.
+Performance varies by domain: autoimmune pairs achieve 100\% accuracy (10/10), while AD pairs are lowest (71\%) due to underpowered non-transport pairs (Table~\ref{tab:realdata-domain}).
+
+\paragraph{Multiplicity correction.}
+Applying Benjamini--Hochberg FDR control at $q = 0.05$ across all 71 tests changes the classification for two pairs: WHR$\to$T2D (unadjusted $p = 0.015$, BH-adjusted $q = 0.064$) and LDL$\to$stroke (unadjusted $p = 0.017$, BH-adjusted $q = 0.066$). BH correction removes the single false positive (LDL$\to$stroke), raising specificity to 100\%, while reducing sensitivity by one additional true positive.
+
+\paragraph{Comparison with $I^2$ thresholds.}
+A natural baseline is the $I^2$ statistic \citep{higgins2002quantifying}, which measures the proportion of variance attributable to between-stratum heterogeneity.
+At fixed degrees of freedom, $I^2 = (Q - (k-1))/Q$ is a monotone transform of $Q$, so classifying by $I^2 > c$ is mathematically equivalent to the $Q$ test at a different $\alpha$.
+An $I^2 > 0.50$ classifier achieves comparable accuracy to the $Q$ test at $\alpha = 0.10$ (Table~\ref{tab:realdata-sensitivity}).
+Of the 44 transport pairs, 39 have $Q < 1$; four others remain below the $\chi^2$ threshold (SBP$\to$CAD at $1.40$, smoking$\to$schizophrenia at $1.56$, T2D$\to$CAD at $2.32$, IL6R$\to$CAD at $2.65$), and LDL$\to$stroke ($Q = 12.09$, $I^2 = 0.67$) is the sole transport pair exceeding the threshold, whose population-set dependence is analyzed in \S\ref{sec:realdata-ldl-stroke}.
+The $Q$ test provides calibrated Type~I error control via the $\chi^2$ distribution, whereas $I^2$ thresholds such as the conventional $50\%$ cutoff \citep{higgins2003measuring} are not tied to a formal hypothesis test.
+The sensitivity analysis (\S\ref{sec:realdata-sensitivity}) explores this threshold space explicitly.
+
+Per-pair $Q$ values, $p$-values, and $I^2$ for all 71 pairs are in Supplementary Material~S14 and the accompanying Supplementary Data spreadsheet.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1_q_dotplot.pdf}
+\caption{Cochran $Q$ $p$-values on $-\!\log_{10}$ scale for all 71 MR pairs across 6 domains. The dashed line marks $\alpha = 0.05$. Red circles: expected non-transport; blue circles: expected transport; gray crosses: misclassified. Ten underpowered non-transport pairs fall below the threshold; one transport pair (LDL$\to$stroke, $-\!\log_{10} p = 1.77$) crosses it due to population-set-dependent heterogeneity (\S\ref{sec:realdata-ldl-stroke}).}
+\label{fig:q-dotplot}
+\end{figure}
+
+The bimodal gap compresses from simulation (${\sim}1000\times$) to real data but remains clear. The lowest detected non-transport $Q$ is $7.3$ (BMI$\to$CAD) and 43 of 44 transport pairs have $Q < 2.7$ (median $0.37$, range $0.00$--$2.65$)---a gap that, while narrower than in simulation, reflects 2--5 strata with moderate-sized cohorts vs.\ 8 simulated strata with exact parameter knowledge. Four transport pairs have $Q > 1$ (IL6R$\to$CAD at $2.65$, T2D$\to$CAD at $2.32$, smoking$\to$schizophrenia at $1.56$, SBP$\to$CAD at $1.40$), all correctly classified as transportable.
+
+The single exception is LDL$\to$stroke ($Q = 12.09$, $p = 0.017$), which is the population-set-dependent case analyzed in \S\ref{sec:realdata-ldl-stroke}: transportable across EUR and EAS alone, but non-transportable when AFR, AMR, and SAS strata are added.
+The cardiometabolic domain illustrates both the rule and the exception: 5 of 6 non-transport pairs are detected (BMI$\to$T2D, BMI$\to$CAD, WHR$\to$T2D, urate$\to$gout, alcohol$\to$cirrhosis), with alcohol$\to$CAD as the one false negative (a pre-specified reclassification due to incomparable instruments in the original label), and 11 of 12 transport pairs are correctly classified, with LDL$\to$stroke as the single false positive.
+
+\subsection{Power analysis}
+\label{sec:realdata-power}
+
+All ten false negatives have statistical power $< 0.38$ (mean $0.18$), computed via the noncentral $\chi^2$ distribution at observed $\tau^2$, while correctly detected non-transport pairs average $0.87$ (Supplementary Material~S10). The power distribution is bimodal with no pairs in the intermediate range. With 8+ strata (as in simulation), the same effect sizes yield power $> 0.95$; the gap between 84.5\% accuracy on real data and $> 99\%$ in simulation is a power effect, not a methodological limitation.
+
+\subsection{Sensitivity analysis}
+\label{sec:realdata-sensitivity}
+
+Sweeping $\alpha$ from 0.001 to 0.50 (Supplementary Material~S12), specificity remains $\geq 0.977$ at all thresholds up to $\alpha = 0.10$; the single FP (LDL$\to$stroke) enters at $\alpha = 0.025$. At $\alpha = 0.10$, accuracy rises to 88.7\% by capturing three borderline non-transport pairs. Five non-transport pairs remain undetected even at $\alpha = 0.30$ (all power $< 0.10$).
+
+\subsection{Stratum-level robustness}
+\label{sec:realdata-stratum-robustness}
+
+Three stratum-level robustness checks confirm classification stability (Supplementary Material~S11). On the 14 independently validated Tier~1 pairs, accuracy is 78.6\% (11/14, exact binomial 95\% CI [49.2\%, 95.3\%]) with all three discordances pre-specified before analysis (commit \texttt{85de0af}). Two reflect outdated labels: alcohol$\to$CAD was labeled using incomparable instruments across different biological pathways, and BMI$\to$breast cancer was labeled from within-ancestry subtype reversal rather than cross-ancestry heterogeneity. Leave-one-out analysis shows 60/71 pairs (84.5\%) are fully stable; the 11 unstable pairs include LDL$\to$stroke (\S\ref{sec:realdata-ldl-stroke}) and non-transport pairs where a single stratum drives the classification. Fixed-effects and random-effects pooled estimates differ negligibly (mean $|\Delta\hat\beta| = 0.021$).
+
+\subsection{Population-set dependence: LDL$\to$stroke}
+\label{sec:realdata-ldl-stroke}
+
+LDL$\to$stroke is the single false positive: labeled as transportable (based on two-ancestry EUR--EAS data), but classified as non-transportable by the 5-ancestry $Q$ test ($Q = 12.09$, $\text{df} = 4$, $p = 0.017$). This discordance was identified as a possible flip in the pre-registration (prediction H2, final paragraph, commit \texttt{85de0af}) before any $Q$ test was computed, specifically because expanding from 2 to 5 ancestries was expected to change the verdict. Per-ancestry IVW estimates from the CAMeRa analysis \citep{hemani2025camera} show two clusters: EUR ($\hat\beta = 0.081$, SE $= 0.019$) and EAS ($0.022$, $0.027$) have small effects, while AFR ($0.285$, $0.083$), AMR ($0.302$, $0.205$), and SAS ($0.206$, $0.178$) have effects 3--4$\times$ larger.
+
+The transportability verdict depends entirely on which populations are compared:
+
+\begin{table}[t]
+\centering
+\caption{LDL$\to$stroke: transportability depends on the comparison population set. The 5-ancestry test detects heterogeneity driven by the AFR stratum ($Q_j = 6.66$ of $Q_{\text{total}} = 12.09$). Restricting to EUR--EAS restores transportability.}
+\label{tab:ldl-stroke-loo}
+\small
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+\textbf{Comparison} & $\boldsymbol{Q}$ & \textbf{df} & $\boldsymbol{p}$ & \textbf{Verdict} \\
+\midrule
+All 5 ancestries & 12.09 & 4 & 0.017 & Non-transport \\
+Drop AFR & 5.20 & 3 & 0.156 & Transport (flips) \\
+Drop EAS & 7.27 & 3 & 0.063 & Transport (flips) \\
+Drop AMR & 10.83 & 3 & 0.013 & Non-transport \\
+Drop SAS & 11.52 & 3 & 0.009 & Non-transport \\
+EUR vs.\ EAS only & 3.21 & 1 & 0.073 & Transport \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The $Q$ test correctly detects the heterogeneity present in the data. The discordance is between a label assigned from two populations and a test computed on five. The AFR estimate ($\hat\beta = 0.285$, 95\% CI $[0.123, 0.447]$) excludes the EUR point estimate entirely; the EUR--AFR pairwise $Q = 5.82$ ($p = 0.015$) confirms significant heterogeneity in this pair alone, while EUR--EAS ($Q = 3.21$, $p = 0.073$) does not.
+
+Whether the AFR--EUR difference reflects genuine causal effect modification (Mason et al.\ pathway 5), population-specific LD structure (pathways 1--2), or smaller AFR stroke GWAS sample sizes producing noisier Wald ratios (pathway 3) cannot be resolved from summary statistics \citep{mason2025multiancestry}. The CAMeRa FEMA instrument selection mitigates some LD artifacts but cannot fully resolve population-specific confounding.
+
+The practical implication: transportability is not a fixed property of an exposure--outcome relationship. It depends on which populations are compared. A pair that is transportable across high-income-country ancestry groups (EUR, EAS) may become non-transportable when populations with different genetic architectures, environmental exposures, or GWAS sample sizes are added. Per-edge $Q$ testing detects this population-set dependence; global meta-analytic tests cannot.
+
+\subsection{Negative-control outcome validation}
+\label{sec:realdata-negative-control}
+
+If LD variation across ancestries were the primary driver of $Q$ heterogeneity, negative-control outcomes---traits determined at birth that no modifiable exposure can cause---would also show inflated $Q$ when tested across the same ancestry groups.
+We test this prediction using Pan-UK Biobank multi-ancestry GWAS summary statistics \citep{karczewski2025panukb}, computing two-sample IVW MR estimates for 18 negative-control pairs (6 exposures $\times$ 3 born-with outcomes: skin tanning, skin colour, handedness) across up to 6 ancestry groups.
+
+Of the 18 negative-control pairs, 13 (72\%) are correctly classified as transportable at $\alpha = 0.05$ (Supplementary Material~S13). Five false positives cluster around weak-instrument exposures (education: 106 SNPs; smoking: 50) and ancestry-differentiated phenotypes; the two exposures with the strongest panels (height: 2700 instruments; LDL: 314) achieve 6/6 correct classifications. The 28\% false-positive rate (5/18) is an upper bound under worst-case instrument conditions: moderate LD variation alone produces low $Q$ (median $< 1$), but weak instruments or ancestry-differentiated phenotyping can inflate $Q$ into the non-transport range.
+
+\subsection{Per-edge DAG adjudication on ADNI data}
+\label{sec:realdata-dag}
+
+We apply per-edge sheaf $Q$ tests to published stage-stratified biomarker coefficients from the Alzheimer's Disease Neuroimaging Initiative (ADNI) longitudinal studies.
+Effect estimates are drawn from three sources: \citet{hanseeuw2019association} report amyloid PET (florbetapir SUVR) and tau PET (flortaucipir) associations with cognition (ADAS-Cog 13) across ATN-defined stages; \citet{jack2019longitudinal} provide annualized rates of amyloid accumulation, tau spread, and cognitive decline stratified by baseline ATN profile (A$-$T$-$, A$+$T$-$, A$+$T$+$ with CDR 0, A$+$T$+$ with CDR $>$ 0); and \citet{ossenkoppele2022tau} report tau-cognition associations across disease severity strata.
+These four strata (preclinical A$+$T$-$, prodromal A$+$T$+$, mild AD, moderate AD) serve as the sheaf vertices.
+The sheaf $Q$ framework is agnostic to the type of stratification: the 71-pair MR validation uses ancestry strata, while this ADNI analysis uses disease-severity strata.
+Both test whether effect estimates are exchangeable across the strata, but the interpretation differs---ancestry-stratified $Q$ tests population-level transportability, while severity-stratified $Q$ tests whether the mechanism operates consistently across disease stages.
+The three source studies \citep{hanseeuw2019association, jack2019longitudinal, ossenkoppele2022tau} draw from overlapping ADNI cohorts; because we use published regression coefficients (not raw participant data), the overlap affects the effective independence of the effect estimates but not their point values.
+The AD DAG has three edges: amyloid$\to$tau, tau$\to$cognition, and amyloid$\to$cognition (direct bypass).
+
+\begin{table}[t]
+\centering
+\caption{Per-edge sheaf $Q$ tests on published ADNI longitudinal data. Three-way edge classification is richer than the simulation's binary prediction.}
+\label{tab:realdata-dag}
+\small
+\begin{tabular}{@{}llccccl@{}}
+\toprule
+\textbf{Edge} & \textbf{Type} & $\boldsymbol{Q}$ & $\boldsymbol{p}$ & $\boldsymbol{I^2}$ & \textbf{Het.?} & \textbf{Pattern} \\
+\midrule
+Amyloid $\to$ tau & Mechanism & $23.8$ & $8.8 \times 10^{-5}$ & $83\%$ & Yes & Switching \\
+Tau $\to$ cognition & Mediator$\to$outcome & $30.3$ & $4.3 \times 10^{-6}$ & $87\%$ & Yes & Dose-response \\
+Amyloid $\to$ cognition & Direct bypass & $1.5$ & $0.82$ & $0\%$ & No & Stable \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All three edge types match reclassified predictions (Table~\ref{tab:realdata-dag}, Figure~\ref{fig:dag}). The variance ratio between mechanism and bypass edges is $18.9\times$. With three edges tested, the Bonferroni-corrected threshold is $\alpha_{\mathrm{corr}} = 0.05/3 = 0.0167$; both heterogeneous edges survive correction ($p < 10^{-4}$), while the bypass edge remains clearly non-significant ($p = 0.82$).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/fig2_dag_edges.pdf}
+\caption{Per-edge sheaf $Q$ test on published ADNI longitudinal data. Edge width and color encode heterogeneity type. The amyloid$\to$cognition bypass edge ($Q = 1.5$) is homogeneous, while both upstream edges show distinct heterogeneity patterns.}
+\label{fig:dag}
+\end{figure}
+
+This result is the paper's strongest real-data finding because the structure is not planted.
+The simulation treated all non-mechanism edges as downstream-homogeneous, yet real ADNI data reveals finer structure: tau$\to$cognition shows dose-response heterogeneity (monotonic strengthening from $\beta = -0.12$ in preclinical to $-0.48$ in mild AD), while amyloid$\to$cognition (controlling for tau) is stable and weak ($\beta = -0.03$ to $-0.10$, $Q = 1.5$).
+This three-way classification---mechanism-switching, mediator dose-response, stable bypass---is biologically correct: tau must spread beyond entorhinal cortex before tracking cognition \citep{ossenkoppele2022tau}.
+The sheaf $Q$ test detects both types of heterogeneity; the simulation's binary prediction was a simplification that the real data refines.
+
+A bracket-norm confound audit on published multi-site data (ENIGMA, ADNI) recovers the simulation's metric ordering (Supplementary Material~S3).
+
+%% ==============================================================
+\section{Vector-valued sheaf $Q$: where the equivalence breaks}
+\label{sec:vector}
+%% ==============================================================
+
+The scalar validation establishes that sheaf $Q$ and Cochran's $Q$ are algebraically identical when each stratum reports a single effect estimate. The equivalence depends on the stalks being one-dimensional: the obstruction vector $\mathbf{o} = D_0 \hat{\boldsymbol{\beta}}$ and the covariance $\Sigma = D_0 \operatorname{diag}(\mathrm{se}^2) D_0^\top$ both decompose into independent scalar components. When stalks are vector-valued---as in multivariate MR, where each stratum reports a $d$-dimensional effect vector across correlated exposures or outcomes---the covariance acquires cross-component structure that Cochran's $Q$ applied trait-by-trait cannot capture. The vector-valued sheaf $Q$ test detects a specific failure mode invisible to scalar testing: \emph{effect vector rotation}, where per-trait magnitudes are preserved but the joint direction of the effect vector changes across populations.
+
+\subsection{Generalization to vector-valued stalks}
+\label{sec:vector-math}
+
+Let $K$ strata report $d$-dimensional effect vectors $\hat{\boldsymbol{\beta}}_k \in \R^d$ with covariance matrices $\Sigma_k \in \R^{d \times d}$, where $d > 1$ is the number of jointly estimated exposures or outcomes. The obstruction vector concatenates all pairwise differences across all $d$ components:
+\begin{equation}
+    \mathbf{o} = (D_0 \otimes I_d) \, \operatorname{vec}(\hat{B}), \quad
+    \hat{B} = [\hat{\boldsymbol{\beta}}_1, \ldots, \hat{\boldsymbol{\beta}}_K]^\top \in \R^{K \times d},
+    \label{eq:vector-obstruction}
+\end{equation}
+where $D_0$ is the signed incidence matrix of the complete graph $K_K$ and $\otimes$ denotes the Kronecker product. The block covariance is $\boldsymbol{\Sigma} = (D_0 \otimes I_d) \operatorname{bdiag}(\Sigma_1, \ldots, \Sigma_K) (D_0 \otimes I_d)^\top$, and the multivariate sheaf $Q$ is
+\begin{equation}
+    Q_V = \mathbf{o}^\top \boldsymbol{\Sigma}^{-1} \mathbf{o}, \quad
+    Q_V \sim \chi^2_{d(K-1)} \text{ under } H_0.
+    \label{eq:vector-Q}
+\end{equation}
+When $d = 1$, Eq.~\ref{eq:vector-Q} reduces to the scalar sheaf $Q$ (Eq.~\ref{eq:sheaf-Q}), which equals Cochran's $Q$ (Supplementary Material~S7). When $d > 1$, the cross-component covariance blocks in $\boldsymbol{\Sigma}$ couple the $d$ trait dimensions, and $Q_V$ is \emph{not} the sum of $d$ independent scalar $Q$ tests.
+
+\paragraph{Decomposition into magnitude and rotation.}
+The multivariate obstruction can be decomposed into two orthogonal components. For each pair of strata $(i, j)$, define the magnitude difference $\delta^{\mathrm{mag}}_{ij} = \|\hat{\boldsymbol{\beta}}_i\| - \|\hat{\boldsymbol{\beta}}_j\|$ and the angular difference $\theta_{ij} = \arccos(\hat{\boldsymbol{\beta}}_i^\top \hat{\boldsymbol{\beta}}_j / \|\hat{\boldsymbol{\beta}}_i\| \|\hat{\boldsymbol{\beta}}_j\|)$. Scalar $Q$ tests are sensitive to $\delta^{\mathrm{mag}}$ (different effect sizes per trait) but blind to $\theta$ (rotation of the effect vector at constant per-component magnitude). The vector $Q_V$ captures both.
+
+\subsection{Effect vector rotation: a worked example}
+\label{sec:vector-rotation}
+
+Consider $K = 3$ ancestry groups each reporting $d = 2$ exposure effects (such as LDL and HDL on CAD risk). Suppose the three effect vectors have identical per-component magnitudes---$|\beta_1^{(k)}| = |\beta_2^{(k)}|$ for all $k$---but the joint direction rotates:
+\begin{align}
+    \hat{\boldsymbol{\beta}}_{\mathrm{EUR}} &= (0.30, 0.20)^\top, \nonumber \\
+    \hat{\boldsymbol{\beta}}_{\mathrm{EAS}} &= (0.25, 0.26)^\top, \nonumber \\
+    \hat{\boldsymbol{\beta}}_{\mathrm{AFR}} &= (0.15, 0.33)^\top. \nonumber
+\end{align}
+With $\mathrm{SE} = 0.06$ for all components: scalar Cochran's $Q$ on each trait yields $Q_1 = 3.24$ ($p = 0.20$) and $Q_2 = 2.35$ ($p = 0.31$)---both non-significant because per-component variation is modest. With diagonal covariance (uncorrelated traits), $Q_V = 5.59$ ($p = 0.23$, $\chi^2_4$)---also non-significant, since $Q_V$ equals the sum of scalar tests. With trait correlation $\rho = 0.5$, the off-diagonal covariance blocks detect the rotation: $Q_V = 11.1$ ($p = 0.026$, $\chi^2_4$)---significant. The angle between EUR and AFR effect vectors is $31.9^\circ$.
+
+This is not a pathological construction. Pleiotropic genetic variants frequently affect multiple traits through shared biological pathways whose relative contributions differ across ancestries due to LD structure, gene-environment interaction, or allele frequency variation. Effect vector rotation is the generic failure mode when the \emph{mechanism} is shared but the \emph{pathway weighting} differs.
+
+\subsection{Pan-UKB multi-ancestry blood-trait analysis}
+\label{sec:vector-jass}
+
+\paragraph{Setup.}
+Six predictions for the vector $Q$ extension (H\textsubscript{V1}--H\textsubscript{V6}) were pre-registered before viewing any results (commit \texttt{3349fce}).
+We extract per-ancestry GWAS summary statistics from the Pan-UK Biobank \citep{karczewski2025panukb}, which provides multi-ancestry association results for $d = 25$ blood cell traits (white blood cell count, neutrophil count, monocyte count, platelet count, haemoglobin, and 20 additional haematological indices) across $K = 6$ ancestry groups (AFR, AMR, CSA, EAS, EUR, MID). At each of 7 well-characterized pleiotropic blood-trait GWAS loci, we query per-ancestry effect estimates $\hat{\beta}_{kj}$ and standard errors $\mathrm{SE}_{kj}$ via tabix over the Pan-UKB S3-hosted summary statistics (GRCh37 coordinates).
+
+\paragraph{Analysis.}
+At each locus, we compute:
+\begin{enumerate}
+    \item 25 independent scalar Cochran's $Q$ tests (one per trait, $\chi^2_5$ each),
+    \item the multivariate sheaf $Q_V$ on the full 25-dimensional vector (Eq.~\ref{eq:vector-Q}, $\chi^2_{125}$) with within-stratum covariance $\Sigma_k[j,l] = \hat{\rho}_{jl} \cdot \mathrm{SE}_{kj} \cdot \mathrm{SE}_{kl}$, where $\hat{\rho}_{jl}$ is the phenotypic correlation estimated from $z$-score covariance at 9{,}117 common null variants on chromosome~22,
+    \item a diagonal-covariance baseline ($\hat{\rho} = I_d$, equivalent to summing $d$ scalar $Q$ tests) for comparison,
+    \item the maximum pairwise rotation angle $\theta_{\max}$ between ancestry effect vectors.
+\end{enumerate}
+
+\paragraph{ACKR1/Duffy locus (positive control).}
+The Duffy antigen receptor (ACKR1, rs2814778) is a known true positive for ancestry-specific genetic effects: the Duffy-null allele is fixed in sub-Saharan African populations due to malaria selection pressure and affects multiple hematological traits (neutrophil count, monocyte count, basophil count, WBC count) through a single biological mechanism.
+
+\begin{table}[t]
+\centering
+\caption{ACKR1/Duffy locus (rs2814778): scalar vs.\ vector $Q$ across 6 ancestries. Scalar $Q$ detects heterogeneity on myeloid-lineage traits (neutrophil, WBC, monocyte) but is non-significant on erythroid and platelet traits. The 25-dimensional vector $Q_V$ aggregates the coordinated multi-lineage signal. Bonferroni threshold: $\alpha / 25 = 0.002$.}
+\label{tab:ackr1}
+\small
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Test} & $\boldsymbol{Q}$ & $\boldsymbol{p}$ & \textbf{Note} \\
+\midrule
+Scalar: neutrophil count & 159.2 & $< 10^{-300}$ & Significant ($I^2 = 0.97$) \\
+Scalar: WBC count & 121.1 & $< 10^{-300}$ & Significant ($I^2 = 0.96$) \\
+Scalar: lymphocyte \% & 57.6 & $3.8 \times 10^{-11}$ & Significant ($I^2 = 0.91$) \\
+Scalar: neutrophil \% & 56.9 & $5.4 \times 10^{-11}$ & Significant ($I^2 = 0.91$) \\
+Scalar: monocyte count & 22.3 & $4.5 \times 10^{-4}$ & Significant ($I^2 = 0.78$) \\
+Scalar: eosinophil \% & 15.8 & $0.008$ & Non-significant (Bonf.) \\
+Scalar: platelet count & 7.8 & $0.17$ & Non-significant \\
+Scalar: haemoglobin & 7.0 & $0.22$ & Non-significant \\
+\midrule
+Vector $Q_V$ (25 traits, correlated) & 561.6 & $< 10^{-300}$ & $\chi^2_{125}$; 5/25 scalar sig.\ \\
+Vector $Q_V$ (25 traits, diagonal) & 549.1 & $< 10^{-300}$ & Ratio $Q_V / \Sigma Q_j = 1.02$ \\
+$\theta_{\max}$ (CSA--EAS) & \multicolumn{2}{c}{$97.2^\circ$} & EUR--MID $18.6^\circ$, AFR--EUR $18.9^\circ$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Locus classification.}
+Across 7 well-characterized pleiotropic blood-trait GWAS loci with per-ancestry data in all 6 ancestry groups (Table~\ref{tab:jass-comparison}), we classify each by the agreement between the vector $Q_V$ test ($\alpha = 0.05$) and the set of $d = 25$ Bonferroni-corrected scalar $Q$ tests ($\alpha / 25 = 0.002$ per trait):
+\begin{itemize}
+    \item \textbf{Concordant significant}: both vector $Q_V$ and $\geq 1$ scalar $Q$ significant,
+    \item \textbf{Rotation-only}: vector $Q_V$ significant but no individual scalar $Q$ reaches significance after Bonferroni correction,
+    \item \textbf{Component-only}: $\geq 1$ scalar $Q$ significant but vector $Q_V$ non-significant (anti-correlated heterogeneity cancelling in the joint test; expected to be rare).
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\caption{Locus classification: scalar vs.\ vector $Q$ on Pan-UKB 25-trait blood cell data across 6 ancestries. Vector $Q_V$ uses empirically estimated within-stratum trait correlations; scalar significance uses Bonferroni correction ($\alpha / 25 = 0.002$). Five of seven loci are rotation-only: vector $Q_V$ significant, no scalar $Q$ significant after correction. The median ratio $Q_V / \sum Q_j^{\mathrm{scalar}} = 1.43$.}
+\label{tab:jass-comparison}
+\small
+\begin{tabular}{@{}lccp{5.0cm}@{}}
+\toprule
+\textbf{Category} & \textbf{N} & \textbf{\%} & \textbf{Loci ($Q_V$, $\theta_{\max}$)} \\
+\midrule
+Concordant significant & 2 & 29 & ACKR1 ($Q_V\!=\!561.6$), TMPRSS6 ($Q_V\!=\!575.7$) \\
+Rotation-only & 5 & 71 & ARHGEF3 ($Q_V\!=\!416.6$, $\theta_{\max}\!=\!64^\circ$), PHACTR1 ($242.6$, $106^\circ$), SH2B3 ($199.8$, $78^\circ$), BRAP ($190.9$, $86^\circ$), PTPN22 ($175.7$, $123^\circ$) \\
+Component-only & 0 & 0 & --- \\
+\midrule
+\textbf{Total analyzed} & \textbf{7} & \textbf{100} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ``rotation-only'' category is the paper's key empirical claim: loci where the effect vector rotates across ancestries, producing ancestry-specific pathway weighting that no per-trait scalar test can detect. Power simulations (360 parameter cells $\times$ 2{,}000 replicates) confirm that the vector $Q_V$ test has 2--3$\times$ higher power than per-trait scalar $Q$ at detecting rotation when traits are correlated ($\rho = 0.6$, $\theta = 60^\circ$: vector power $\approx 0.90$, scalar power $\approx 0.41$); null calibration across all $(K, d)$ combinations shows empirical type~I error within 0.3\% of the nominal $\alpha = 0.05$ (Supplementary Material).
+
+\subsection{CAMeRa multi-exposure validation}
+\label{sec:vector-camera}
+
+The CAMeRa framework \citep{hemani2025camera} provides per-ancestry univariate MR estimates for cardiometabolic exposure--outcome pairs. We have already extracted per-ancestry IVW estimates for LDL$\to$stroke across 5 ancestries (used in the scalar validation, \S\ref{sec:realdata-ldl-stroke}). In the scalar case ($d = 1$), vector $Q_V$ reduces to scalar $Q$ by construction, so this analysis does not test vector--scalar divergence.
+
+\paragraph{Limitation.}
+The CAMeRa repository provides per-ancestry \emph{univariate} MR estimates, not jointly estimated multi-exposure MVMR vectors. Constructing genuine vector-valued stalks ($d > 1$) from MVMR requires per-ancestry multi-exposure effect estimates and their joint covariance, which would need to be computed from individual-level or LD-referenced summary statistics. We report the LDL$\to$stroke result ($Q = 12.09$, $p = 0.017$, $I^2 = 0.67$, 5 ancestries) as the scalar baseline and note that extending CAMeRa to MVMR is a natural direction for future multi-exposure vector $Q$ validation.
+
+\subsection{When scalar and vector $Q$ diverge}
+\label{sec:vector-divergence}
+
+The Pan-UKB blood-trait analysis and the CAMeRa scalar baseline illustrate complementary aspects of vector--scalar divergence (Table~\ref{tab:divergence-summary}).
+
+\paragraph{Conditions for divergence.}
+The vector $Q_V$ and the sum of $d$ scalar $Q$ tests produce the same result when the cross-ancestry covariance is block-diagonal (traits are uncorrelated within each ancestry) and heterogeneity is confined to a single component. Divergence requires two conditions: (1) non-trivial cross-trait covariance within strata, and (2) heterogeneity distributed across components in a way that preserves per-component magnitudes while changing their joint direction.
+
+\paragraph{Biological interpretation.}
+Effect vector rotation has a natural biological interpretation in multi-ancestry genetics: pleiotropic loci affect multiple traits through shared regulatory pathways, and the relative contribution of each pathway can differ across ancestries due to LD structure (different causal variants in different populations tagging the same gene through different regulatory elements), gene-environment interaction (pathway activity modulated by ancestry-correlated environmental exposures), or compensatory pleiotropy (selection pressure on one trait alters the pathway balance for others). The ACKR1 locus exemplifies this: the Duffy-null allele eliminates one hematological pathway entirely in African-ancestry populations, rotating the multi-trait effect vector rather than uniformly scaling it.
+
+\begin{table}[t]
+\centering
+\caption{Summary: when scalar and vector $Q$ agree vs.\ diverge, with observed counts from the 7-locus Pan-UKB blood-trait analysis.}
+\label{tab:divergence-summary}
+\small
+\begin{tabular}{@{}p{3.5cm}p{3.5cm}cc@{}}
+\toprule
+\textbf{Scenario} & \textbf{Biological example} & \textbf{Scalar $Q$} & \textbf{Vector $Q_V$} \\
+\midrule
+Uniform scaling (all traits shift proportionally) & Population-wide effect modifier & Significant & Significant \\
+Single-trait heterogeneity (one trait drives $Q$) & Trait-specific LD or pleiotropy & Significant (1 trait) & Significant \\
+Effect vector rotation (direction changes, magnitudes preserved) & Pathway reweighting across ancestries (ACKR1) & Non-significant & Significant \\
+Anti-correlated cancellation & Not observed (0/7 loci) & Significant & Non-significant \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+%% ==============================================================
+\section{Discussion}
+\label{sec:discussion}
+%% ==============================================================
+
+\subsection{Connection to transportability theory and existing methods}
+
+The $H^1$ classifier tests whether effect estimates are exchangeable across strata---what the formal transportability framework of \citet{bareinboim2016causal} and \citet{pearl2014external} frames as determining whether a causal quantity can be recovered across domains using selection diagrams and do-calculus transport formulae.
+On scalar effect estimates, $H^1 \neq 0$ reduces to significant Cochran's $Q$ \citep{cochran1954combination} (Supplementary Material~S7), which is equivalent to testing whether the selection variables indexing the strata are ignorable for transport.
+
+A natural question is why the sheaf formalism is needed at all, since one could run Cochran's $Q$ on each DAG edge independently without invoking cohomology.
+On scalar stalks, the per-edge test statistics are identical---our proof establishes this algebraically.
+The sheaf framing contributes three things beyond the per-edge loop: (1)~the $H^1$ classification provides a principled binary label grounded in cohomological obstruction theory; (2)~the framework extends to vector-valued stalks where the scalar equivalence breaks (\S\ref{sec:vector}); and (3)~the vector extension detects effect vector rotation, a qualitatively different failure mode invisible to per-trait scalar testing. The Pan-UKB blood-trait analysis (\S\ref{sec:vector-jass}) demonstrates this empirically: 5 of 7 significant loci are rotation-only, detectable by vector $Q_V$ but missed by every Bonferroni-corrected scalar test across 25 traits, with $Q_V / \sum Q_j^{\mathrm{scalar}}$ ratios ranging from 1.35 (SH2B3) to 3.19 (ARHGEF3).
+
+In network meta-analysis, \citet{rucker2012network} decomposes $Q$ into within-design and between-design components using the graph Laplacian, and \citet{dias2010checking} tests per-edge consistency via node-splitting.
+These methods share the principle that edge-level decomposition reveals structure invisible to global tests, but operate on treatment comparison networks and test direct-vs-indirect evidence agreement rather than cross-population transportability on a causal DAG.
+The relationship is analogous: NMA asks ``do the evidence paths agree?'' while sheaf $Q$ asks ``does this mechanism generalize across populations?''
+
+Contemporaneous work applies sheaf cohomology to causal inference in other settings.
+\citet{wu2026sheafcausal} formalize structural causal models as cellular sheaves over Wasserstein spaces and show that $H^1 \neq 0$ obstructs generative model convergence---the same ``cohomological obstruction'' principle, applied to diffusion models rather than meta-analysis.
+\citet{kim2025holograph} use presheaf axioms to check consistency of LLM-derived causal beliefs for structure discovery.
+Neither addresses MR transportability, per-edge heterogeneity testing, or the connection to Cochran's $Q$; the independent convergence on $H^1$ as an obstruction detector supports the sheaf-theoretic framing from a different direction.
+
+\subsection{Clinical implications}
+
+Four practical consequences follow from the real-data validation.
+First, multi-ancestry MR meta-analyses that pool estimates across populations implicitly assume transportability at every edge of the causal graph.
+The per-edge $H^1$ test provides an empirical check of this assumption before pooling, flagging edges where stratum-specific estimates should be reported separately rather than combined.
+Second, the LDL$\to$stroke result demonstrates that transportability verdicts depend on which populations are compared. A pair that appears transportable across two high-income-country ancestry groups may become non-transportable when populations with different genetic architectures or GWAS sample sizes are added. Multi-ancestry meta-analyses should report transportability conditional on the comparison set, not as a fixed property of the exposure--outcome relationship.
+Third, the ADNI three-way classification (mechanism-switching vs.\ dose-response vs.\ stable bypass) demonstrates that per-edge testing recovers clinically interpretable heterogeneity patterns on real longitudinal data, distinguishing edges where the mechanism itself differs across populations from edges where the effect magnitude varies continuously.
+Fourth, the classifier operates entirely on published summary statistics and is implemented in an open-source package (\texttt{pip install mr-transport}), requiring no individual-level data access and no domain-specific calibration.
+
+\paragraph{Recommendations for practice.}
+When conducting multi-ancestry MR or meta-analysing causal estimates across strata, we recommend: (1)~apply per-edge $Q$ tests before pooling, using $\alpha = 0.05$ with Bonferroni correction across the edges of the causal DAG; (2)~for edges where $Q$ is significant, report stratum-specific estimates rather than a pooled value; (3)~compute power at the observed $\tau^2$ to distinguish genuine transportability ($Q$ non-significant with adequate power) from inconclusive results ($Q$ non-significant but underpowered); and (4)~interpret significant $Q$ as a composite signal reflecting causal effect modification, LD variation, and instrument differences---further investigation is needed to decompose the source.
+
+\subsection{Limitations}
+
+The simulations are existence demonstrations with planted structure, not realistic clinical models: confounding is complete (all-or-nothing), SEMs use random DAGs without domain structure, and heterogeneity patterns (mechanism-edge variance $100\times$ larger than downstream) are set by design.
+The MS and AD simulations share identical coefficient values with different labels (Supplementary Material~S4); the AD simulation confirms pipeline consistency on matched inputs, not cross-domain generalization. Cross-domain evidence comes from the 71-pair real-data validation (\S\ref{sec:realdata}), where effect sizes and stratum counts are determined by published studies.
+Real clinical data present partial confounding, measurement error, missing data, and continuous rather than discrete variation.
+All drug-effect coefficients (BTK, siponimod, lecanemab) are simulated values calibrated to clinical expectations, not estimated from trial data.
+
+The real-data validation (\S\ref{sec:realdata}) uses published summary statistics rather than individual-level data, so the $Q$ test operates on 2--5 strata rather than the 8+ in simulation.
+This limits power: ten false negatives all have power $< 0.38$ at $\alpha = 0.05$.
+Individual-level replication with $\geq 8$ population strata would test whether the simulation's high power ($> 0.95$) holds.
+The single false positive (LDL$\to$stroke) reflects population-set dependence rather than test failure; whether the AFR--EUR heterogeneity is biological or methodological cannot be resolved from summary statistics alone (\S\ref{sec:realdata-ldl-stroke}).
+
+The $H^1$ classifier's scale-invariance stress test did not fully pass in either domain: quantile normalization reduced scale variability (MS: $0.517 \to 0.346$; AD: $0.734 \to 0.695$) but neither reached the $0.30$ target.
+Developing scale-free alternatives to OLS-based sheaf $Q$ tests is an open direction.
+
+The real-data $H^1$ classification uses ancestry strata from different published studies, so heterogeneity reflects a composite of causal effect modification, LD structure, allele frequency, instrument validity, and demographic differences.
+The classification tests exchangeability, not effect modification in isolation.
+Standard instrument-level MR sensitivity analyses---MR-Egger \citep{bowden2015mendelian}, the weighted median estimator \citep{bowden2016consistent}, and MR-PRESSO \citep{verbanck2018detection}---require individual SNP-level data and test a different hypothesis (instrument pleiotropy) than the stratum-level $Q$ test (population exchangeability); the stratum-level robustness checks reported in \S\ref{sec:realdata-stratum-robustness} are the appropriate sensitivity analyses for this data structure.
+
+The negative-control validation produces a 28\% false-positive rate (5/18), driven by weak-instrument exposures and ancestry-differentiated phenotypes (\S\ref{sec:realdata-negative-control}). This rate is an upper bound under worst-case instrument conditions rather than an estimate of the test's expected false-positive rate on well-instrumented MR pairs, but it demonstrates that the $Q$ test is sensitive to instrument quality and phenotype ancestry-differentiation, not only to causal effect modification. Replication with harmonized cross-ancestry instrument panels would sharpen this bound.
+
+Of the 71 validation pairs, 57 contain at least one stratum with domain-knowledge or approximate effect estimates whose construction was informed by the expected label. The 14 Tier~1 pairs with independently published per-ancestry MR data provide the uncontaminated validation; the remaining 57 pairs should be interpreted as consistency checks, not independent tests.
+
+The confound audit recovers the correct metric ordering but cannot detect suppressor effects from published additive variance decompositions.
+Detecting non-additive confounding requires individual-level multivariate data.
+
+%% ==============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%% ==============================================================
+
+Per-edge sheaf $Q$ tests and $H^1$ transportability classification provide a practical workflow for assessing which Mendelian randomization results generalize across populations. On scalar effect estimates, the sheaf $Q$ test reduces algebraically to Cochran's $Q$; on vector-valued stalks (multivariate MR), the equivalence breaks and the sheaf $Q_V$ detects effect vector rotation---ancestry-specific pathway reweighting invisible to per-trait scalar tests.
+
+On 71 pre-registered scalar MR pairs across six clinical domains, the $H^1$ classifier achieves 84.5\% unconditional accuracy. Ten misclassifications are underpowered false negatives (power $< 0.38$); the single powered discordance---LDL$\to$stroke---demonstrates that transportability is population-set-dependent (\S\ref{sec:realdata-ldl-stroke}). Among the 14 independently validated pairs (exact binomial 95\% CI [49\%, 95\%]), all three discordances were pre-specified before analysis.
+The vector-valued extension on Pan-UKB multi-ancestry blood cell traits identifies 5 of 7 loci where effect vector rotation ($\theta_{\max}$ from $64^\circ$ to $123^\circ$) produces cross-ancestry heterogeneity that no per-trait scalar test detects after Bonferroni correction, with a median $Q_V / \sum Q_j^{\mathrm{scalar}}$ ratio of 1.43 (\S\ref{sec:vector}).
+Per-edge tests on ADNI longitudinal data recover a three-way DAG classification (mechanism-switching, mediator dose-response, stable bypass) richer than the simulation's binary prediction.
+
+\subsubsection*{Conflict of Interest}
+None declared.
+
+\subsubsection*{Data Availability Statement}
+All simulation code, analysis pipelines, the 71-pair MR catalog with published effect estimates and source citations, and figure-generation scripts are available at \url{https://github.com/elliottower/mr-transport} and as an installable Python package (\texttt{mr-transport}). An R implementation of both the scalar transportability test and the vector-valued sheaf $Q$ test is available as the \texttt{mrtransport} package (\texttt{remotes::install\_github("elliottower/mr-transport", subdir = "mrtransport")}). The real-data validation uses published summary statistics (Supplementary Material~S8) and does not require individual-level data access. Simulation parameters are fully specified in Supplementary Material~S4 with fixed random seeds. This paper, all code, and all data are archived at \href{https://doi.org/10.5281/zenodo.21348650}{doi:10.5281/zenodo.21348650}.
+
+\bibliographystyle{unsrtnat}
+\bibliography{references_A}
+
+\end{document}

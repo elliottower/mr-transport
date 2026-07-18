@@ -1,0 +1,346 @@
+---
+title: "Transportability Testing with mrtransport"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Transportability Testing with mrtransport}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(mrtransport)
+```
+
+## What mrtransport does
+
+Multi-ancestry Mendelian randomization estimates sometimes disagree across
+populations. `mrtransport` provides two complementary tools:
+
+1. **Scalar transportability testing**: Cochran's Q with post-hoc power
+   analysis, sensitivity diagnostics, and a "transport" / "non-transport"
+   verdict for single-trait MR estimates.
+
+2. **Vector sheaf Q**: A multivariate Q statistic that detects effect vector
+   rotation across populations at multi-trait loci -- heterogeneity patterns
+   that per-trait scalar Q tests miss entirely.
+
+This tutorial walks through both workflows.
+
+---
+
+## Part 1: Scalar transportability testing
+
+### Case 1: HLA-DRB1 shared epitope to RA -- clear non-transport
+
+The HLA-DRB1 shared epitope has dramatically different effects on rheumatoid
+arthritis risk across ancestries (EUR OR~5.0, EAS OR~3.3, AFR OR~2.2). This
+is a textbook non-transportable pair.
+
+```{r case1}
+result <- test_transport(
+  betas = c(1.6, 1.2, 0.8, 1.0),
+  ses   = c(0.04, 0.07, 0.12, 0.10),
+  strata_names = c("EUR", "EAS", "AFR", "HISP")
+)
+cat(sprintf("Verdict:    %s\n", result$verdict))
+cat(sprintf("Q = %.2f, df = %d, p = %.2e\n", result$Q, result$df, result$p))
+cat(sprintf("I2 = %.1f%%, power = %.2f\n", result$I2 * 100, result$power))
+cat(sprintf("Underpowered? %s\n", result$underpowered))
+```
+
+The Q test easily rejects homogeneity. High power confirms this is a
+real signal, not a type I error.
+
+### Case 2: SBP to Alzheimer's disease -- underpowered
+
+Systolic blood pressure and Alzheimer's disease: the effects look
+heterogeneous (I2~58%), but only 4 strata produce low power. The test
+correctly returns "transport" (non-significant), but the `underpowered`
+flag warns that this is honest uncertainty, not evidence of homogeneity.
+
+```{r case2}
+result_sbp <- test_transport(
+  betas = c(0.10, -0.05, 0.15, 0.02),
+  ses   = c(0.04, 0.05, 0.08, 0.10),
+  strata_names = c("EUR_midlife", "EUR_latelife", "EAS", "AFR")
+)
+cat(sprintf("Verdict:    %s\n", result_sbp$verdict))
+cat(sprintf("Q = %.2f, df = %d, p = %.4f\n", result_sbp$Q, result_sbp$df, result_sbp$p))
+cat(sprintf("I2 = %.1f%%, power = %.2f\n", result_sbp$I2 * 100, result_sbp$power))
+cat(sprintf("Underpowered? %s\n", result_sbp$underpowered))
+```
+
+How many strata would achieve 80% power at this I2 level?
+
+```{r strata-needed}
+k_needed <- strata_needed(I2 = result_sbp$I2, target_power = 0.80)
+cat(sprintf("Strata needed for 80%% power: %s\n",
+            if (is.null(k_needed)) ">50" else as.character(k_needed)))
+```
+
+### Case 3: Synthetic catalog -- benchmarking accuracy
+
+Generate 20 transportable and 10 non-transportable pairs with known ground
+truth, classify all, and check accuracy.
+
+```{r case3}
+catalog <- simulate_catalog(n_transport = 20, n_nontransport = 10, seed = 42)
+correct <- 0L
+for (pair in catalog) {
+  r <- test_transport(
+    betas = pair$betas,
+    ses = pair$ses,
+    strata_names = pair$strata_names
+  )
+  if (r$verdict == pair$ground_truth) correct <- correct + 1L
+}
+cat(sprintf("Accuracy: %d/%d (%.0f%%)\n", correct, length(catalog),
+            100 * correct / length(catalog)))
+```
+
+### Case 4: Bring your own data -- with sensitivity analysis
+
+Replace the vectors below with your own per-stratum MR estimates.
+
+```{r case4}
+my_result <- test_transport(
+  betas = c(0.25, 0.23, 0.28),
+  ses   = c(0.05, 0.06, 0.07),
+  strata_names = c("EUR", "EAS", "AFR")
+)
+cat(sprintf("Verdict: %s (Q = %.2f, p = %.4f, power = %.2f)\n",
+            my_result$verdict, my_result$Q, my_result$p, my_result$power))
+```
+
+**Alpha sweep**: how does the verdict change across significance thresholds?
+
+```{r sweep}
+sweep <- alpha_sweep(
+  betas = c(0.25, 0.23, 0.28),
+  ses   = c(0.05, 0.06, 0.07)
+)
+for (i in seq_len(nrow(sweep))) {
+  cat(sprintf("  alpha=%.3f: %-15s (power=%.2f)\n",
+              sweep$alpha[i], sweep$verdict[i], sweep$power[i]))
+}
+```
+
+**Leave-one-out**: does the verdict depend on a single stratum?
+
+```{r loo}
+loo <- leave_one_out(
+  betas = c(0.25, 0.23, 0.28),
+  ses   = c(0.05, 0.06, 0.07),
+  strata_names = c("EUR", "EAS", "AFR")
+)
+cat(sprintf("LOO stable: %s\n", loo$stable))
+if (!loo$stable) {
+  cat(sprintf("Flips when dropping: %s\n", paste(loo$flipped_strata, collapse = ", ")))
+}
+```
+
+---
+
+## Part 2: Vector sheaf Q (multi-trait loci)
+
+Standard practice runs Cochran's Q on each trait separately, but this misses
+a specific failure mode: **effect vector rotation**, where per-trait effect
+magnitudes look similar but the joint direction of the effect vector changes
+across ancestries.
+
+The vector sheaf Q statistic tests for heterogeneity in the joint effect
+vector. On a single trait (d = 1), it reduces algebraically to Cochran's Q.
+On multiple traits (d > 1), it detects rotation that d independent scalar
+tests cannot.
+
+### Case 5: ACKR1/Duffy -- effect vector rotation across ancestries
+
+The ACKR1/Duffy locus (rs2814778) affects multiple blood cell traits. The
+Duffy-null allele, nearly fixed in sub-Saharan African populations due to
+malaria selection, eliminates ACKR1-mediated chemokine scavenging. This
+produces a coordinated multi-trait shift -- a rotation, not a uniform
+scaling -- across ancestries.
+
+```{r ackr1-data}
+beta <- matrix(c(
+   0.15,  0.08,  0.03,  0.12,  0.02,
+   0.18,  0.10,  0.02,  0.14,  0.03,
+  -0.25,  0.35,  0.20, -0.10,  0.15,
+   0.12,  0.06,  0.04,  0.10,  0.01,
+   0.08,  0.12,  0.06,  0.05,  0.04,
+   0.14,  0.09,  0.03,  0.11,  0.02
+), nrow = 6, byrow = TRUE)
+
+se <- matrix(c(
+  0.02, 0.02, 0.01, 0.02, 0.01,
+  0.03, 0.03, 0.02, 0.03, 0.02,
+  0.04, 0.04, 0.03, 0.04, 0.03,
+  0.03, 0.03, 0.02, 0.03, 0.02,
+  0.04, 0.04, 0.03, 0.04, 0.03,
+  0.03, 0.03, 0.02, 0.03, 0.02
+), nrow = 6, byrow = TRUE)
+
+rownames(beta) <- rownames(se) <- c("EUR", "EAS", "AFR", "CSA", "AMR", "MID")
+colnames(beta) <- colnames(se) <- c("Neutrophil", "Monocyte", "Basophil", "WBC", "Eosinophil")
+```
+
+Run the vector sheaf Q test:
+
+```{r ackr1-vector}
+result <- vector_sheaf_q_diagonal(beta, se)
+cat(sprintf("Q_V = %.1f, df = %d, p = %.2e\n", result$Q_V, result$df, result$p))
+```
+
+Check if individual scalar Q tests on each trait detect this:
+
+```{r ackr1-scalar}
+d <- ncol(beta)
+alpha_bonf <- 0.05 / d
+
+for (j in seq_len(d)) {
+  sq <- scalar_cochran_q(beta[, j], se[, j])
+  sig <- if (sq$p < alpha_bonf) "*" else " "
+  cat(sprintf("  %-12s  Q = %6.2f  p = %.4f  I2 = %.1f%%  %s\n",
+              colnames(beta)[j], sq$Q, sq$p, sq$I2 * 100, sig))
+}
+```
+
+The vector test detects coordinated heterogeneity that some individual scalar
+tests miss. The rotation angle shows which ancestry pair diverges most:
+
+```{r ackr1-rotation}
+rot <- max_rotation(beta)
+cat(sprintf("Maximum rotation: %.1f degrees (between %s and %s)\n",
+            rot$theta_max,
+            rownames(beta)[rot$pair[1]],
+            rownames(beta)[rot$pair[2]]))
+```
+
+### Case 6: Vector Q vs scalar Q -- four-way classification
+
+`classify_locus()` runs both tests and assigns one of four categories:
+
+- **concordant_significant**: both vector Q and at least one scalar Q significant
+- **concordant_null**: neither detects heterogeneity
+- **rotation_only**: vector Q significant, no individual scalar Q significant (after Bonferroni)
+- **component_only**: at least one scalar Q significant, but vector Q is not (rare)
+
+```{r classify}
+cl <- classify_locus(beta, se)
+cat(sprintf("Category: %s\n", cl$category))
+cat(sprintf("Vector Q_V: %.1f (p = %.2e)\n",
+            cl$vector_result$Q_V, cl$vector_result$p))
+cat(sprintf("Max rotation: %.1f degrees\n", cl$rotation$theta_max))
+```
+
+A "rotation_only" classification means the heterogeneity is invisible to
+per-trait analysis. The vector test detects it because it accounts for the
+coordinated shift in the joint effect vector.
+
+### Case 7: Why trait correlations matter
+
+Blood traits measured on the same individuals are correlated (shared
+hematopoietic pathways). When you know the within-stratum trait correlations,
+`vector_sheaf_q_correlated()` uses them to build a more accurate covariance
+model.
+
+```{r correlated}
+diag_result <- vector_sheaf_q_diagonal(beta, se)
+
+d <- ncol(beta)
+rho <- 0.4
+rho_matrix <- matrix(rho, nrow = d, ncol = d)
+diag(rho_matrix) <- 1
+
+corr_result <- vector_sheaf_q_correlated(beta, se, rho_matrix)
+
+cat(sprintf("Diagonal Q_V:    %8.1f  (p = %.2e)\n",
+            diag_result$Q_V, diag_result$p))
+cat(sprintf("Correlated Q_V:  %8.1f  (p = %.2e)\n",
+            corr_result$Q_V, corr_result$p))
+cat(sprintf("Ratio Q_V / sum(scalar Q): %.2f\n",
+            corr_result$Q_V / corr_result$sum_scalar_Q))
+```
+
+When traits are positively correlated and heterogeneity is rotation-like,
+the correlated Q_V diverges upward from the sum of scalar Q tests. This
+ratio > 1 is the signature of covariance-mediated heterogeneity that
+per-trait tests cannot capture.
+
+**Key invariant**: with diagonal covariance (rho = 0), Q_V equals the sum
+of scalar Q tests exactly. The correlated version diverges only when
+off-diagonal structure interacts with the heterogeneity pattern.
+
+```{r invariant}
+cat(sprintf("Diagonal: Q_V = %.4f, sum(scalar) = %.4f, difference = %.1e\n",
+            diag_result$Q_V, diag_result$sum_scalar_Q,
+            abs(diag_result$Q_V - diag_result$sum_scalar_Q)))
+```
+
+### Case 8: Bring your own multi-trait data
+
+Replace the matrices below with your own per-ancestry, per-trait MR estimates.
+
+```{r byod-vector}
+my_beta <- matrix(c(
+  0.25, 0.10,
+  0.23, 0.12,
+  0.28, 0.08
+), nrow = 3, byrow = TRUE)
+
+my_se <- matrix(c(
+  0.05, 0.03,
+  0.06, 0.04,
+  0.07, 0.05
+), nrow = 3, byrow = TRUE)
+
+rownames(my_beta) <- rownames(my_se) <- c("EUR", "EAS", "AFR")
+colnames(my_beta) <- colnames(my_se) <- c("LDL", "HDL")
+
+vq <- vector_sheaf_q_diagonal(my_beta, my_se)
+cat(sprintf("Vector Q_V = %.2f, df = %d, p = %.4f\n", vq$Q_V, vq$df, vq$p))
+
+for (j in seq_len(ncol(my_beta))) {
+  sq <- scalar_cochran_q(my_beta[, j], my_se[, j])
+  cat(sprintf("  %s: Q = %.2f, p = %.4f, I2 = %.0f%%\n",
+              colnames(my_beta)[j], sq$Q, sq$p, sq$I2 * 100))
+}
+
+cl <- classify_locus(my_beta, my_se)
+cat(sprintf("Classification: %s\n", cl$category))
+cat(sprintf("Max rotation: %.1f degrees\n", cl$rotation$theta_max))
+```
+
+With known trait correlations:
+
+```{r byod-correlated}
+rho <- matrix(c(1.0, -0.3,
+               -0.3,  1.0), nrow = 2)
+
+vq_corr <- vector_sheaf_q_correlated(my_beta, my_se, rho)
+cat(sprintf("Correlated Q_V = %.2f (p = %.4f)\n", vq_corr$Q_V, vq_corr$p))
+cat(sprintf("Q_V / sum(scalar): %.2f\n", vq_corr$Q_V / vq_corr$sum_scalar_Q))
+```
+
+---
+
+## Interpretation guide
+
+### Scalar transportability
+
+| Verdict | Power | I2 | Interpretation |
+|:--|:--|:--|:--|
+| non-transport | high | high | Clear heterogeneity; effect does not transport |
+| transport | high | low | Homogeneous; effect likely transports |
+| transport | low | high | **Underpowered**: honest uncertainty, get more strata |
+| transport | low | low | Insufficient signal either way |
+
+### Vector Q classification
+
+| Q_V significant? | Any scalar Q significant? | Category | Interpretation |
+|:-:|:-:|:--|:--|
+| Yes | Yes | concordant_significant | Strong heterogeneity in both joint and marginal tests |
+| No | No | concordant_null | No detectable heterogeneity |
+| Yes | No | rotation_only | Effect vector rotates; no single trait is heterogeneous enough alone |
+| No | Yes | component_only | Anti-correlated heterogeneity cancels in the joint test (rare) |

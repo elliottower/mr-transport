@@ -1,0 +1,28 @@
+Package: mrtransport
+Title: Transportability Testing for Mendelian Randomization
+Version: 0.1.0
+Authors@R: person("Elliot", "Tower", email = "elliot@elliottower.ai",
+                   role = c("aut", "cre"))
+Description: Tests whether stratified Mendelian randomization (MR) causal
+    effect estimates are transportable across populations. For scalar effects,
+    implements Cochran's Q with post-hoc power analysis, leave-one-out
+    sensitivity, and alpha-sweep diagnostics. For vector-valued effects
+    (multiple traits at one locus), implements the multivariate sheaf Q
+    statistic that detects effect vector rotation invisible to per-trait
+    scalar Q tests. Includes locus classification (concordant, rotation-only,
+    component-only), rotation angle computation, and simulation utilities
+    for benchmarking.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: R (>= 3.5.0)
+Imports: stats
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/elliottower/mr-transport
+BugReports: https://github.com/elliottower/mr-transport/issues
